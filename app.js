@@ -185,6 +185,7 @@ function fmtCountdown(sec) {
 /* ---------- DOM ---------- */
 const $ = id => document.getElementById(id);
 const rowsEl = $('prayers');
+const rowEls = {};
 const rowTimeEls = {};
 
 /* brief unobtrusive toast, e.g. «خلفية 2 من 5» */
@@ -226,6 +227,7 @@ PRAYERS.forEach(p => {
     row.addEventListener('click', cycleBg);
   }
   rowsEl.appendChild(row);
+  rowEls[p.key] = row;
   rowTimeEls[p.key] = tm;
 });
 
@@ -283,6 +285,19 @@ function setIqamaAlert(on) {
   } catch (e) {}
 }
 
+/* next-prayer highlight: the row the countdowns focus on — the next
+   adhan, or the prayer whose iqama window is currently running — swaps
+   its name/time colors via a .next class (see style.css). The class is
+   moved only when the focus prayer actually changes. */
+let nextRowKey = null;
+function setNextRow(key) {
+  if (key === nextRowKey) return;
+  nextRowKey = key;
+  try {
+    for (const k in rowEls) rowEls[k].classList.toggle('next', k === key);
+  } catch (e) {}
+}
+
 function tick() {
   let bn;
   try { bn = baghdadNow(); } catch (e) { return; }
@@ -297,16 +312,16 @@ function tick() {
   }
 
   const city = cityById[cityId];
-  if (!city) { setIqamaAlert(false); return; }
+  if (!city) { setIqamaAlert(false); setNextRow(null); return; }
   const nowSec = bn.h * 3600 + bn.mi * 60 + bn.s;
 
   const evs = PRAYERS.map(p => {
     const mins = prayerMinutes(city, bn.y, bn.mo, bn.d, p);
     return { p, sec: mins === null ? null : mins * 60 };
   }).filter(e => e.sec !== null);
-  if (!evs.length) { setIqamaAlert(false); return; }
+  if (!evs.length) { setIqamaAlert(false); setNextRow(null); return; }
 
-  let cdAdhan = null, cdIqama = null, inIqamaWindow = false;
+  let cdAdhan = null, cdIqama = null, inIqamaWindow = false, focusKey = null;
   const idx = evs.findIndex(e => e.sec > nowSec);
 
   if (idx === -1) {
@@ -320,9 +335,11 @@ function tick() {
       cdIqama = lastIqamaEnd - nowSec;
       cdAdhan = adhanAbs;
       inIqamaWindow = true;
+      focusKey = last.p.key; // still inside the last prayer's iqama window
     } else {
       cdAdhan = adhanAbs;
       cdIqama = adhanAbs === null ? null : adhanAbs + (iqamaMin[PRAYERS[0].key] || 0) * 60;
+      focusKey = PRAYERS[0].key; // tomorrow's Fajr
     }
   } else {
     const next = evs[idx];
@@ -333,9 +350,11 @@ function tick() {
       cdIqama = prev.sec + (iqamaMin[prev.p.key] || 0) * 60 - nowSec;
       cdAdhan = next.sec - nowSec;
       inIqamaWindow = true;
+      focusKey = prev.p.key; // the prayer whose iqama is running stays the focus
     } else {
       cdAdhan = next.sec - nowSec;
       cdIqama = cdAdhan + (iqamaMin[next.p.key] || 0) * 60;
+      focusKey = next.p.key;
     }
   }
 
@@ -364,6 +383,7 @@ function tick() {
     safeSet('cd-adhan', cdAdhan === null ? '--:--' : fmtCountdown(cdAdhan));
   }
   safeSet('cd-iqama', cdIqama === null ? '--:--' : fmtCountdown(cdIqama));
+  setNextRow(focusKey);
   setIqamaAlert(inIqamaWindow);
 }
 

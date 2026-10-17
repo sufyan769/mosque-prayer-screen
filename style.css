@@ -115,6 +115,26 @@ body[data-bg="9"] .ptime {
     3px 3px 0 #000, -3px 3px 0 #000, 3px -3px 0 #000, -3px -3px 0 #000;
 }
 
+/* next-prayer row (landscape): the name and the time SWAP colors — the
+   name takes the time's color and the time takes the name's, within the
+   active scheme. Only `color` changes; sizes/weights/shadows untouched.
+   bg6 and bg9 are deliberately absent: their outline rule above wins
+   and the outlined white stays as-is. */
+body[data-layout="landscape"][data-bg="1"] .prow.next .pname,
+body[data-layout="landscape"][data-bg="4"] .prow.next .pname { color: #CC4844; }
+body[data-layout="landscape"][data-bg="1"] .prow.next .ptime,
+body[data-layout="landscape"][data-bg="4"] .prow.next .ptime { color: #0A2C5D; }
+body[data-layout="landscape"][data-bg="2"] .prow.next .pname,
+body[data-layout="landscape"][data-bg="3"] .prow.next .pname,
+body[data-layout="landscape"][data-bg="5"] .prow.next .pname,
+body[data-layout="landscape"][data-bg="7"] .prow.next .pname,
+body[data-layout="landscape"][data-bg="8"] .prow.next .pname { color: #FF8A75; }
+body[data-layout="landscape"][data-bg="2"] .prow.next .ptime,
+body[data-layout="landscape"][data-bg="3"] .prow.next .ptime,
+body[data-layout="landscape"][data-bg="5"] .prow.next .ptime,
+body[data-layout="landscape"][data-bg="7"] .prow.next .ptime,
+body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
+
 #stage { position: fixed; inset: 0; z-index: 2; }
 
 /* ---------- Left zone: prayer rows ---------- */
@@ -372,7 +392,7 @@ body[data-layout="portrait"][data-pbg="9"] #bg { background-image: url('pbg9.jpg
 
 body[data-layout="portrait"] #stage {
   display: flex; flex-direction: column;
-  padding: calc(var(--fh) * .052) calc(var(--fw) * .085) calc(var(--fh) * .168);
+  padding: calc(var(--fh) * .052) calc(var(--fw) * .085) calc(var(--fh) * .178);
 }
 body[data-layout="portrait"] #rightzone {
   position: static;
@@ -453,13 +473,17 @@ body[data-layout="portrait"] .ptime {
   -webkit-text-stroke: 0;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .45);
 }
+/* portrait next-prayer row: the same swap — the name goes gold and the
+   time goes white (color only, nothing else changes) */
+body[data-layout="portrait"] .prow.next .pname { color: #FFC95E; }
+body[data-layout="portrait"] .prow.next .ptime { color: #fff; }
 
 /* 5 — bottom strip over the images' solid band: الشروق | باقي للصلاة
    القادمة. The dedicated iqama cell is hidden here; during the iqama
    window the «باقي» cell itself switches to the red iqama countdown. */
 body[data-layout="portrait"] #bottomcluster {
   position: absolute; left: 0; right: 0; bottom: 0;
-  height: calc(var(--fh) * .148);
+  height: calc(var(--fh) * .158);
   align-items: center; justify-content: space-around;
   padding: 0 calc(var(--fw) * .05) calc(var(--fh) * .005);
   color: #fff;
@@ -471,11 +495,11 @@ body[data-layout="portrait"] #bottomcluster .vdiv {
   align-self: center; height: calc(var(--fh) * .075); margin: 0;
 }
 body[data-layout="portrait"] #bottomcluster .blabel { font-size: min(calc(var(--fh) * .027), calc(var(--fw) * .05)); }
-body[data-layout="portrait"] #bottomcluster .bval { font-size: min(calc(var(--fh) * .05), calc(var(--fw) * .092)); }
+body[data-layout="portrait"] #bottomcluster .bval { font-size: min(calc(var(--fh) * .058), calc(var(--fw) * .104)); }
 /* the «باقي للفجر» line carries the next prayer's name inside the label
    itself, so it and its countdown get the strip's biggest type */
 body[data-layout="portrait"] #next-col .blabel { font-size: min(calc(var(--fh) * .036), calc(var(--fw) * .066)); }
-body[data-layout="portrait"] #next-col .bval { font-size: min(calc(var(--fh) * .056), calc(var(--fw) * .10)); }
+body[data-layout="portrait"] #next-col .bval { font-size: min(calc(var(--fh) * .064), calc(var(--fw) * .114)); }
 /* the separate next-prayer name line is retired in portrait — the name
    now lives inside the «باقي لل…» label */
 body[data-layout="portrait"] .bname { display: none; }
