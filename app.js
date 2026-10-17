@@ -346,14 +346,18 @@ function tick() {
   safeSet('nextname', nextName);
 
   if (layout === 'portrait') {
-    /* the portrait strip has ONE countdown cell («الصلاة القادمة»): outside
-       the window it counts to the next adhan; inside the iqama window it
-       becomes the iqama countdown itself and burns red via .alert */
+    /* the portrait strip has ONE countdown cell: outside the window its
+       label reads «باقي للفجر» — «باقي لـ» fused with the next prayer's
+       name (every prayer name carries the definite article ال, which the
+       ل swallows: باقي للظهر، باقي للمغرب…) — and it counts to that
+       adhan; inside the iqama window the label becomes «باقي للإقامة»,
+       the value is the iqama countdown itself, and the cell burns red
+       via .alert */
     if (inIqamaWindow) {
-      safeSet('next-label', 'الإقامة');
+      safeSet('next-label', 'باقي للإقامة');
       safeSet('cd-adhan', cdIqama === null ? '--:--' : fmtCountdown(cdIqama));
     } else {
-      safeSet('next-label', 'الصلاة القادمة');
+      safeSet('next-label', 'باقي لل' + nextName.replace(/^ال/, ''));
       safeSet('cd-adhan', cdAdhan === null ? '--:--' : fmtCountdown(cdAdhan));
     }
   } else {

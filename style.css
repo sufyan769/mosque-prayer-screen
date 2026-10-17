@@ -372,7 +372,7 @@ body[data-layout="portrait"][data-pbg="9"] #bg { background-image: url('pbg9.jpg
 
 body[data-layout="portrait"] #stage {
   display: flex; flex-direction: column;
-  padding: calc(var(--fh) * .052) calc(var(--fw) * .085) calc(var(--fh) * .155);
+  padding: calc(var(--fh) * .052) calc(var(--fw) * .085) calc(var(--fh) * .168);
 }
 body[data-layout="portrait"] #rightzone {
   position: static;
@@ -443,23 +443,23 @@ body[data-layout="portrait"] #prayers {
 body[data-layout="portrait"] .prow { padding: 0 calc(var(--fw) * .012); }
 body[data-layout="portrait"] .pname {
   color: #fff;
-  font-size: min(calc(var(--fh) * .048), calc(var(--fw) * .088));
+  font-size: min(calc(var(--fh) * .056), calc(var(--fw) * .102));
   -webkit-text-stroke: 0;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .45);
 }
 body[data-layout="portrait"] .ptime {
   color: #FFC95E;
-  font-size: min(calc(var(--fh) * .053), calc(var(--fw) * .096));
+  font-size: min(calc(var(--fh) * .062), calc(var(--fw) * .112));
   -webkit-text-stroke: 0;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .45);
 }
 
-/* 5 — bottom strip over the images' solid band: الشروق | الصلاة القادمة.
-   The dedicated iqama cell is hidden here; during the iqama window the
-   next-prayer cell itself switches to the red iqama countdown. */
+/* 5 — bottom strip over the images' solid band: الشروق | باقي للصلاة
+   القادمة. The dedicated iqama cell is hidden here; during the iqama
+   window the «باقي» cell itself switches to the red iqama countdown. */
 body[data-layout="portrait"] #bottomcluster {
   position: absolute; left: 0; right: 0; bottom: 0;
-  height: calc(var(--fh) * .135);
+  height: calc(var(--fh) * .148);
   align-items: center; justify-content: space-around;
   padding: 0 calc(var(--fw) * .05) calc(var(--fh) * .005);
   color: #fff;
@@ -471,12 +471,14 @@ body[data-layout="portrait"] #bottomcluster .vdiv {
   align-self: center; height: calc(var(--fh) * .075); margin: 0;
 }
 body[data-layout="portrait"] #bottomcluster .blabel { font-size: min(calc(var(--fh) * .027), calc(var(--fw) * .05)); }
-body[data-layout="portrait"] #bottomcluster .bval { font-size: min(calc(var(--fh) * .045), calc(var(--fw) * .082)); }
-body[data-layout="portrait"] .bname {
-  display: block;
-  font-size: min(calc(var(--fh) * .035), calc(var(--fw) * .064));
-  font-weight: 700; line-height: 1.25;
-}
+body[data-layout="portrait"] #bottomcluster .bval { font-size: min(calc(var(--fh) * .05), calc(var(--fw) * .092)); }
+/* the «باقي للفجر» line carries the next prayer's name inside the label
+   itself, so it and its countdown get the strip's biggest type */
+body[data-layout="portrait"] #next-col .blabel { font-size: min(calc(var(--fh) * .036), calc(var(--fw) * .066)); }
+body[data-layout="portrait"] #next-col .bval { font-size: min(calc(var(--fh) * .056), calc(var(--fw) * .10)); }
+/* the separate next-prayer name line is retired in portrait — the name
+   now lives inside the «باقي لل…» label */
+body[data-layout="portrait"] .bname { display: none; }
 /* light bottom strips (pbg1/pbg3/pbg4 cyan, pbg2 grey) take navy text;
    the dark strips (pbg5–pbg9) keep the white default above */
 body[data-layout="portrait"][data-pbg="1"] #bottomcluster,
@@ -486,14 +488,13 @@ body[data-layout="portrait"][data-pbg="4"] #bottomcluster {
   color: #0A2C5D;
   text-shadow: 0 1px 10px rgba(255, 255, 255, .35);
 }
-/* iqama window in portrait: the next cell burns red, name line held
-   (visibility, so the strip geometry does not jump) */
+/* iqama window in portrait: the «باقي للإقامة» cell burns red while it
+   counts down */
 body[data-layout="portrait"] #next-col.alert .blabel,
 body[data-layout="portrait"] #next-col.alert .bval {
   color: #FF3131;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .5);
 }
-body[data-layout="portrait"] #next-col.alert #nextname { visibility: hidden; }
 
 /* 6 — the silent-phone banner centers over the prayer rows; the clock
    above and the strip below stay fully visible. Stacked (icon over text)
