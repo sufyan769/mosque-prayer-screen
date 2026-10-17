@@ -27,11 +27,43 @@ const offsets = Object.assign({ fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 }
 const clampNum = (v, a, b) => Math.min(b, Math.max(a, v));
 let hijriOffset = clampNum(parseInt(store.get('mps_hijri', '0'), 10) || 0, -3, 3);
 
-/* background cycling: nine images, Fajr-row click advances, persisted */
+/* background cycling: nine images per layout, Fajr-row click advances,
+   persisted per layout (mps_bg landscape / mps_pbg portrait) */
 const BG_COUNT = 9;
 let bgIndex = clampNum(parseInt(store.get('mps_bg', '0'), 10) || 0, 0, BG_COUNT - 1);
-function applyBg() { document.body.setAttribute('data-bg', String(bgIndex + 1)); }
-applyBg();
+let pbgIndex = clampNum(parseInt(store.get('mps_pbg', '0'), 10) || 0, 0, BG_COUNT - 1);
+function applyBg() {
+  document.body.setAttribute('data-bg', String(bgIndex + 1));
+  document.body.setAttribute('data-pbg', String(pbgIndex + 1));
+}
+
+/* screen orientation: one engine, two layouts. The setting «اتجاه الشاشة»
+   (mps_layout) is auto (default) / landscape / portrait; auto follows the
+   viewport shape and is recomputed on resize / orientationchange. */
+let layoutPref = store.get('mps_layout', 'auto');
+if (layoutPref !== 'auto' && layoutPref !== 'landscape' && layoutPref !== 'portrait') layoutPref = 'auto';
+let layout = 'landscape';
+function effectiveLayout() {
+  if (layoutPref === 'portrait') return 'portrait';
+  if (layoutPref === 'landscape') return 'landscape';
+  return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
+}
+function applyLayout() {
+  layout = effectiveLayout();
+  document.body.setAttribute('data-layout', layout);
+  applyBg();
+  if (layout === 'landscape') {
+    /* tick() only rewrites the strip label in portrait — restore the
+       landscape wording when the layout flips back */
+    try {
+      const lab = document.getElementById('next-label');
+      if (lab && lab.textContent !== 'الأذان التالي') lab.textContent = 'الأذان التالي';
+    } catch (e) {}
+  }
+}
+applyLayout();
+window.addEventListener('resize', applyLayout);
+window.addEventListener('orientationchange', applyLayout);
 
 const CITIES = (typeof PRAYER_DATA !== 'undefined') ? PRAYER_DATA : [];
 const cityById = {};
@@ -151,10 +183,17 @@ function showToast(msg) {
 }
 
 function cycleBg() {
-  bgIndex = (bgIndex + 1) % BG_COUNT;
-  store.set('mps_bg', String(bgIndex));
-  applyBg();
-  showToast('خلفية ' + (bgIndex + 1) + ' من ' + BG_COUNT);
+  if (layout === 'portrait') {
+    pbgIndex = (pbgIndex + 1) % BG_COUNT;
+    store.set('mps_pbg', String(pbgIndex));
+    applyBg();
+    showToast('خلفية ' + (pbgIndex + 1) + ' من ' + BG_COUNT);
+  } else {
+    bgIndex = (bgIndex + 1) % BG_COUNT;
+    store.set('mps_bg', String(bgIndex));
+    applyBg();
+    showToast('خلفية ' + (bgIndex + 1) + ' من ' + BG_COUNT);
+  }
 }
 
 PRAYERS.forEach(p => {
@@ -220,10 +259,11 @@ function setIqamaAlert(on) {
   if (on === alertState) return;
   alertState = on;
   try {
-    const veil = $('iqamaveil'), box = $('iqama-alert'), col = $('iqama-col');
+    const veil = $('iqamaveil'), box = $('iqama-alert'), col = $('iqama-col'), ncol = $('next-col');
     if (veil) veil.hidden = !on;
     if (box) box.hidden = !on;
     if (col) col.classList.toggle('alert', on);
+    if (ncol) ncol.classList.toggle('alert', on);
   } catch (e) {}
 }
 
@@ -283,7 +323,26 @@ function tick() {
     }
   }
 
-  safeSet('cd-adhan', cdAdhan === null ? '--:--' : fmtCountdown(cdAdhan));
+  /* the next prayer's name — displayed by the portrait bottom strip
+     (in the iqama window the «next» adhan is still the following prayer,
+     matching what cdAdhan counts to) */
+  const nextName = idx === -1 ? PRAYERS[0].name : evs[idx].p.name;
+  safeSet('nextname', nextName);
+
+  if (layout === 'portrait') {
+    /* the portrait strip has ONE countdown cell («الصلاة القادمة»): outside
+       the window it counts to the next adhan; inside the iqama window it
+       becomes the iqama countdown itself and burns red via .alert */
+    if (inIqamaWindow) {
+      safeSet('next-label', 'الإقامة');
+      safeSet('cd-adhan', cdIqama === null ? '--:--' : fmtCountdown(cdIqama));
+    } else {
+      safeSet('next-label', 'الصلاة القادمة');
+      safeSet('cd-adhan', cdAdhan === null ? '--:--' : fmtCountdown(cdAdhan));
+    }
+  } else {
+    safeSet('cd-adhan', cdAdhan === null ? '--:--' : fmtCountdown(cdAdhan));
+  }
   safeSet('cd-iqama', cdIqama === null ? '--:--' : fmtCountdown(cdIqama));
   setIqamaAlert(inIqamaWindow);
 }
@@ -306,6 +365,20 @@ mosqueInput.addEventListener('input', () => {
   store.set('mps_mosque', mosqueName);
   $('mosquename').textContent = mosqueName;
 });
+
+/* screen orientation: تلقائي / أفقي / عمودي — shared by both layouts */
+const layoutBtns = document.querySelectorAll('#p-layout button');
+function markLayoutBtns() {
+  layoutBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-lp') === layoutPref));
+}
+layoutBtns.forEach(b => b.addEventListener('click', () => {
+  layoutPref = b.getAttribute('data-lp');
+  store.set('mps_layout', layoutPref);
+  markLayoutBtns();
+  applyLayout();
+  tick();
+}));
+markLayoutBtns();
 
 /* city search + list */
 const citiesEl = $('p-cities');

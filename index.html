@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>مواقيت الصلاة</title>
-<link rel="stylesheet" href="style.css?v=10">
+<link rel="stylesheet" href="style.css?v=11">
 </head>
-<body data-bg="1">
+<body data-bg="1" data-pbg="1" data-layout="landscape">
 <div id="bg"></div>
 
 <main id="stage">
@@ -31,8 +31,9 @@
     <div id="clockwrap"><div id="clock" class="num" title="الإعدادات">00:00:00</div></div>
 
     <div id="bottomcluster">
-      <div class="bcol">
-        <div class="blabel">الأذان التالي</div>
+      <div class="bcol" id="next-col">
+        <div class="blabel" id="next-label">الأذان التالي</div>
+        <div class="bname" id="nextname"></div>
         <div class="bval num" id="cd-adhan">--:--</div>
       </div>
       <div class="vdiv"></div>
@@ -67,6 +68,13 @@
   <label class="p-label" for="p-mosque">اسم المسجد</label>
   <textarea id="p-mosque" rows="2" autocomplete="off"></textarea>
 
+  <label class="p-label">اتجاه الشاشة</label>
+  <div class="p-layout-row" id="p-layout">
+    <button type="button" data-lp="auto">تلقائي</button>
+    <button type="button" data-lp="landscape">أفقي</button>
+    <button type="button" data-lp="portrait">عمودي</button>
+  </div>
+
   <label class="p-label" for="p-search">المدينة</label>
   <input id="p-search" type="text" placeholder="ابحث عن مدينة…" autocomplete="off">
   <div id="p-cities"></div>
@@ -79,6 +87,6 @@
 </aside>
 
 <script src="data.js"></script>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
