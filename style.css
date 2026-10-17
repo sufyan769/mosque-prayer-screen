@@ -80,20 +80,22 @@ body {
 .tlabel { font-size: min(4.3vh, 6.5vw); line-height: 1.25; }
 .tval { font-size: min(5.7vh, 8.5vw); line-height: 1.2; direction: ltr; }
 
-/* mosque name — in the empty gap under the cluster, above the clock */
+/* mosque name — headline of the right zone, above the clock */
 #mosquename {
-  text-align: center;
-  font-size: min(7.2vh, 11vw);
+  text-align: right;
+  padding-right: 1vw;
+  font-size: min(10.2vh, 15vw);
   font-weight: 700;
   line-height: 1.3;
-  margin-top: 3.2vh;
+  margin-top: 2.6vh;
   white-space: nowrap; overflow: hidden;
 }
 
-/* big clock */
+/* big clock — low and to the right, clear of the gold band */
 #clockwrap {
   flex: 1;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: flex-end; justify-content: flex-start;
+  padding-bottom: 2.5vh; padding-right: 1vw;
 }
 #clock {
   font-size: min(12.5vh, 18.5vw);
