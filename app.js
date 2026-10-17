@@ -70,19 +70,34 @@ function datePlus(y, mo, d, add) {
   return { y: t.getUTCFullYear(), mo: t.getUTCMonth() + 1, d: t.getUTCDate() };
 }
 
-/* Hijri (Umm al-Qura) day + month only, no year — formatted in Baghdad */
-const dtfHijri = new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura-nu-latn', {
-  timeZone: 'Asia/Baghdad', day: 'numeric', month: 'long',
-});
+/* Hijri (Umm al-Qura) day + month only, no year — formatted in Baghdad.
+   Fully fault-isolated: the formatter is built lazily inside a try/catch, so a
+   browser/WebView whose ICU lacks the islamic-umalqura calendar degrades to an
+   empty Hijri line instead of throwing into the render path — a RangeError out
+   of dtfHijri.formatToParts previously escaped renderDay→tick() on the very
+   first call, so setInterval was never registered and the clock froze at
+   00:00:00 with --:-- countdowns (prayers/sunrise already rendered). */
+let dtfHijri = null, hijriBroken = false;
 function hijriText(y, mo, d) {
-  /* noon UTC = 15:00 in Baghdad — same civil date, safe from edge rollovers */
-  const t = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
-  let day = '', month = '';
-  for (const p of dtfHijri.formatToParts(t)) {
-    if (p.type === 'day') day = p.value;
-    if (p.type === 'month') month = p.value;
+  if (hijriBroken) return '';
+  try {
+    if (!dtfHijri) {
+      dtfHijri = new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura-nu-latn', {
+        timeZone: 'Asia/Baghdad', day: 'numeric', month: 'long',
+      });
+    }
+    /* noon UTC = 15:00 in Baghdad — same civil date, safe from edge rollovers */
+    const t = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+    let day = '', month = '';
+    for (const p of dtfHijri.formatToParts(t)) {
+      if (p.type === 'day') day = p.value;
+      if (p.type === 'month') month = p.value;
+    }
+    return (day + ' ' + month).trim();
+  } catch (e) {
+    hijriBroken = true;
+    return '';
   }
-  return day + ' ' + month;
 }
 
 function dayTimes(city, y, mo, d) {
@@ -161,32 +176,51 @@ PRAYERS.forEach(p => {
 
 let lastDateKey = '';
 
+/* fill one element; a failure here must never block the other fields */
+function safeSet(id, text) {
+  try { const el = $(id); if (el) el.textContent = text; } catch (e) {}
+}
+
 function renderDay(bn) {
   const city = cityById[cityId];
   if (!city) return;
   PRAYERS.forEach(p => {
-    const mins = prayerMinutes(city, bn.y, bn.mo, bn.d, p);
-    rowTimeEls[p.key].textContent = mins === null ? '--:--' : fmt12(mins);
+    try {
+      const mins = prayerMinutes(city, bn.y, bn.mo, bn.d, p);
+      rowTimeEls[p.key].textContent = mins === null ? '--:--' : fmt12(mins);
+    } catch (e) {}
   });
-  const t = dayTimes(city, bn.y, bn.mo, bn.d);
-  if (t) {
-    const [H, M] = t[SUNRISE_SLOT].split(':').map(Number);
-    $('sunrise').textContent = fmt12(H * 60 + M);
-  }
-  $('weekday').textContent = bn.weekday;
-  $('daynum').textContent = bn.d;
-  $('monthname').textContent = bn.month;
-  const hd = datePlus(bn.y, bn.mo, bn.d, hijriOffset);
-  $('hijri').textContent = hijriText(hd.y, hd.mo, hd.d);
-  $('mosquename').textContent = mosqueName;
+  try {
+    const t = dayTimes(city, bn.y, bn.mo, bn.d);
+    if (t) {
+      const [H, M] = t[SUNRISE_SLOT].split(':').map(Number);
+      safeSet('sunrise', fmt12(H * 60 + M));
+    }
+  } catch (e) {}
+  /* every date field is filled independently — the Hijri computation in
+     particular can never take the Gregorian day number or month down with it */
+  safeSet('weekday', bn.weekday);
+  safeSet('daynum', bn.d);
+  safeSet('monthname', bn.month);
+  try {
+    const hd = datePlus(bn.y, bn.mo, bn.d, hijriOffset);
+    safeSet('hijri', hijriText(hd.y, hd.mo, hd.d));
+  } catch (e) {}
+  safeSet('mosquename', mosqueName);
 }
 
 function tick() {
-  const bn = baghdadNow();
-  const dateKey = bn.y + '-' + bn.mo + '-' + bn.d + '|' + cityId + '|' + hijriOffset;
-  if (dateKey !== lastDateKey) { lastDateKey = dateKey; renderDay(bn); }
+  let bn;
+  try { bn = baghdadNow(); } catch (e) { return; }
+  /* the clock is set FIRST and independently — no date/Hijri failure below
+     may ever freeze it */
+  safeSet('clock', fmtClock12(bn.h, bn.mi, bn.s));
 
-  $('clock').textContent = fmtClock12(bn.h, bn.mi, bn.s);
+  const dateKey = bn.y + '-' + bn.mo + '-' + bn.d + '|' + cityId + '|' + hijriOffset;
+  if (dateKey !== lastDateKey) {
+    lastDateKey = dateKey;
+    try { renderDay(bn); } catch (e) {}
+  }
 
   const city = cityById[cityId];
   if (!city) return;
@@ -229,8 +263,8 @@ function tick() {
     }
   }
 
-  $('cd-adhan').textContent = cdAdhan === null ? '--:--' : fmtCountdown(cdAdhan);
-  $('cd-iqama').textContent = cdIqama === null ? '--:--' : fmtCountdown(cdIqama);
+  safeSet('cd-adhan', cdAdhan === null ? '--:--' : fmtCountdown(cdAdhan));
+  safeSet('cd-iqama', cdIqama === null ? '--:--' : fmtCountdown(cdIqama));
 }
 
 /* ---------- settings panel ---------- */
@@ -326,5 +360,7 @@ PRAYERS.forEach(p => {
 });
 
 /* ---------- run ---------- */
-tick();
-setInterval(tick, 500);
+/* the interval is registered FIRST and every invocation is guarded, so no
+   single failure — in this call or any later one — can stop the loop */
+setInterval(() => { try { tick(); } catch (e) {} }, 500);
+try { tick(); } catch (e) {}
