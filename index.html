@@ -4,9 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>مواقيت الصلاة</title>
-<link rel="stylesheet" href="style.css?v=11">
+<link rel="stylesheet" href="style.css?v=12">
 </head>
-<body data-bg="1" data-pbg="1" data-layout="landscape">
+<body data-bg="1" data-pbg="1" data-layout="landscape" data-rot="0">
+<!-- #rotator wraps EVERYTHING visual. Unrotated it is a plain full-viewport
+     box; in the مدوّر modes it becomes a 100vh×100vw frame rotated ±90° so
+     the page itself turns for portrait-mounted panels fed by TV boxes that
+     only ever output a landscape signal. -->
+<div id="rotator">
 <div id="bg"></div>
 
 <main id="stage">
@@ -73,6 +78,8 @@
     <button type="button" data-lp="auto">تلقائي</button>
     <button type="button" data-lp="landscape">أفقي</button>
     <button type="button" data-lp="portrait">عمودي</button>
+    <button type="button" data-lp="portrait-r">عمودي مدوّر يمينًا</button>
+    <button type="button" data-lp="portrait-l">عمودي مدوّر يسارًا</button>
   </div>
 
   <label class="p-label" for="p-search">المدينة</label>
@@ -85,8 +92,9 @@
 
   <p class="p-hint">تُحفظ الإعدادات تلقائيًا على هذا الجهاز.</p>
 </aside>
+</div><!-- /#rotator -->
 
 <script src="data.js"></script>
-<script src="app.js?v=11"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

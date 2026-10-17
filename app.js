@@ -38,19 +38,35 @@ function applyBg() {
 }
 
 /* screen orientation: one engine, two layouts. The setting «اتجاه الشاشة»
-   (mps_layout) is auto (default) / landscape / portrait; auto follows the
-   viewport shape and is recomputed on resize / orientationchange. */
+   (mps_layout) is auto (default) / landscape / portrait / portrait-r /
+   portrait-l; auto follows the viewport shape and is recomputed on resize
+   / orientationchange. The two مدوّر modes are for portrait-mounted panels
+   fed by TV boxes that only ever output a landscape signal — viewport
+   shape says "landscape" forever, so the PAGE rotates instead: #rotator
+   becomes a 100vh×100vw frame turned ±90° (data-rot on <body>), the inner
+   layout is the plain portrait one, and --fw/--fh tell the portrait CSS
+   the frame's true width/height because vw/vh keep meaning the real
+   viewport inside the rotated frame. portrait-r = «مدوّر يمينًا»
+   (rotate(90deg), clockwise); portrait-l = «مدوّر يسارًا» (-90deg). */
+const LAYOUT_PREFS = ['auto', 'landscape', 'portrait', 'portrait-r', 'portrait-l'];
 let layoutPref = store.get('mps_layout', 'auto');
-if (layoutPref !== 'auto' && layoutPref !== 'landscape' && layoutPref !== 'portrait') layoutPref = 'auto';
+if (!LAYOUT_PREFS.includes(layoutPref)) layoutPref = 'auto';
 let layout = 'landscape';
 function effectiveLayout() {
-  if (layoutPref === 'portrait') return 'portrait';
+  if (layoutPref === 'portrait' || layoutPref === 'portrait-r' || layoutPref === 'portrait-l') return 'portrait';
   if (layoutPref === 'landscape') return 'landscape';
   return window.innerHeight > window.innerWidth ? 'portrait' : 'landscape';
 }
 function applyLayout() {
   layout = effectiveLayout();
   document.body.setAttribute('data-layout', layout);
+  const rot = layoutPref === 'portrait-r' ? '90' : layoutPref === 'portrait-l' ? '-90' : '0';
+  document.body.setAttribute('data-rot', rot);
+  const rotated = rot !== '0';
+  const fw = rotated ? window.innerHeight : window.innerWidth;
+  const fh = rotated ? window.innerWidth : window.innerHeight;
+  document.documentElement.style.setProperty('--fw', fw + 'px');
+  document.documentElement.style.setProperty('--fh', fh + 'px');
   applyBg();
   if (layout === 'landscape') {
     /* tick() only rewrites the strip label in portrait — restore the
@@ -366,7 +382,8 @@ mosqueInput.addEventListener('input', () => {
   $('mosquename').textContent = mosqueName;
 });
 
-/* screen orientation: تلقائي / أفقي / عمودي — shared by both layouts */
+/* screen orientation: تلقائي / أفقي / عمودي / مدوّر يمينًا / مدوّر يسارًا —
+   one setting shared by both layouts and the rotated frame */
 const layoutBtns = document.querySelectorAll('#p-layout button');
 function markLayoutBtns() {
   layoutBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-lp') === layoutPref));

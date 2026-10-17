@@ -21,6 +21,29 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Frame size for the portrait stylesheet: JS (applyLayout) keeps --fw/--fh
+   at the layout frame's pixel width/height — the viewport itself when
+   unrotated, the swapped dimensions inside the rotated frame. The vw/vh
+   fallbacks keep the pre-JS first paint (and any JS failure) behaving
+   exactly like the plain viewport units the portrait CSS used before. */
+:root { --fw: 100vw; --fh: 100vh; }
+
+/* #rotator wraps everything visual. Unrotated: a plain full-viewport box,
+   no transform — fixed children keep resolving against the viewport, so
+   landscape and native portrait render exactly as before. Rotated
+   («عمودي مدوّر» modes, body[data-rot]): a 100vh×100vw frame centered and
+   turned ±90°, which exactly refills the landscape viewport while the
+   portrait layout inside sees a true portrait box; the transform also
+   makes the frame the containing block for the fixed children. */
+#rotator { position: fixed; inset: 0; }
+body[data-rot="90"] #rotator,
+body[data-rot="-90"] #rotator {
+  left: 50%; top: 50%; right: auto; bottom: auto;
+  width: 100vh; height: 100vw;
+}
+body[data-rot="90"] #rotator { transform: translate(-50%, -50%) rotate(90deg); }
+body[data-rot="-90"] #rotator { transform: translate(-50%, -50%) rotate(-90deg); }
+
 #bg {
   position: fixed; inset: 0; z-index: 0;
   background: center center / cover no-repeat;
@@ -310,10 +333,12 @@ body[data-bg="9"] .ptime {
 .step .unit { direction: rtl; color: rgba(255, 255, 255, .75); font-size: 14px; min-width: 34px; }
 .p-hint { margin-top: 20px; color: rgba(255, 255, 255, .6); font-size: 14px; }
 
-/* screen-orientation segmented control in the settings panel */
-.p-layout-row { display: flex; gap: 8px; }
+/* screen-orientation segmented control in the settings panel — five
+   options now (auto / landscape / portrait / مدوّر يمينًا / مدوّر يسارًا),
+   so the row wraps instead of crushing the Arabic labels */
+.p-layout-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .p-layout-row button {
-  flex: 1; padding: 9px 0; border-radius: 8px;
+  flex: 1 1 30%; padding: 9px 0; border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, .35);
   background: rgba(255, 255, 255, .1); color: #fff;
   font-family: inherit; font-size: 16px; cursor: pointer;
@@ -329,7 +354,11 @@ body[data-bg="9"] .ptime {
    then the prayer rows inside the mihrab arch, and the bottom cluster
    pinned over the portrait images' solid bottom strip. Everything here
    is scoped to body[data-layout="portrait"] and sits at the END of the
-   file so it overrides the landscape data-bg color rules on ties. */
+   file so it overrides the landscape data-bg color rules on ties.
+   Sizes are written as calc(var(--fh) * n) / calc(var(--fw) * n) — the
+   frame-variable form of the old nh / nw units — so the same rules lay
+   out the native-portrait viewport AND the rotated مدوّر frame (where
+   vw/vh still mean the real landscape viewport) at the same scale. */
 
 body[data-layout="portrait"][data-pbg="1"] #bg { background-image: url('pbg1.jpg'); }
 body[data-layout="portrait"][data-pbg="2"] #bg { background-image: url('pbg2.jpg'); }
@@ -343,7 +372,7 @@ body[data-layout="portrait"][data-pbg="9"] #bg { background-image: url('pbg9.jpg
 
 body[data-layout="portrait"] #stage {
   display: flex; flex-direction: column;
-  padding: 5.2vh 8.5vw 15.5vh;
+  padding: calc(var(--fh) * .052) calc(var(--fw) * .085) calc(var(--fh) * .155);
 }
 body[data-layout="portrait"] #rightzone {
   position: static;
@@ -357,7 +386,7 @@ body[data-layout="portrait"] #mosquename {
   padding-right: 0;
   margin-top: 0;
   color: #fff;
-  font-size: min(5.6vh, 10.5vw);
+  font-size: min(calc(var(--fh) * .056), calc(var(--fw) * .105));
   text-shadow: 0 2px 16px rgba(0, 0, 0, .4);
 }
 
@@ -366,11 +395,11 @@ body[data-layout="portrait"] #clockwrap {
   order: 2;
   flex: 0 0 auto;
   align-items: center; justify-content: center;
-  padding: 1.2vh 0 0;
+  padding: calc(var(--fh) * .012) 0 0;
 }
 body[data-layout="portrait"] #clock {
   color: #fff;
-  font-size: min(8.8vh, 16vw);
+  font-size: min(calc(var(--fh) * .088), calc(var(--fw) * .16));
   text-shadow: 0 2px 16px rgba(0, 0, 0, .4);
 }
 
@@ -378,7 +407,7 @@ body[data-layout="portrait"] #clock {
 body[data-layout="portrait"] #topcluster {
   order: 3;
   justify-content: center; align-items: baseline;
-  margin-top: 1.4vh;
+  margin-top: calc(var(--fh) * .014);
   color: #fff;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .4);
 }
@@ -388,18 +417,18 @@ body[data-layout="portrait"] .tcol {
 body[data-layout="portrait"] .tline1,
 body[data-layout="portrait"] .tdate,
 body[data-layout="portrait"] .thijri {
-  font-size: min(3.1vh, 5.5vw);
+  font-size: min(calc(var(--fh) * .031), calc(var(--fw) * .055));
   line-height: 1.25;
   white-space: nowrap;
 }
 body[data-layout="portrait"] #topcluster .vdiv {
   width: auto; align-self: center;
   background: none;
-  margin: 0 1.8vw;
+  margin: 0 calc(var(--fw) * .018);
 }
 body[data-layout="portrait"] #topcluster .vdiv::after {
   content: '•';
-  font-size: min(3.1vh, 5.5vw); line-height: 1;
+  font-size: min(calc(var(--fh) * .031), calc(var(--fw) * .055)); line-height: 1;
 }
 
 /* 4 — the five prayer rows inside the arch: name RIGHT, time LEFT (RTL) */
@@ -408,19 +437,19 @@ body[data-layout="portrait"] #prayers {
   position: static;
   flex: 1 1 auto;
   left: auto; top: auto; bottom: auto; width: auto;
-  padding: 1.5vh 0 0;
+  padding: calc(var(--fh) * .015) 0 0;
   justify-content: space-evenly;
 }
-body[data-layout="portrait"] .prow { padding: 0 1.2vw; }
+body[data-layout="portrait"] .prow { padding: 0 calc(var(--fw) * .012); }
 body[data-layout="portrait"] .pname {
   color: #fff;
-  font-size: min(4.8vh, 8.8vw);
+  font-size: min(calc(var(--fh) * .048), calc(var(--fw) * .088));
   -webkit-text-stroke: 0;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .45);
 }
 body[data-layout="portrait"] .ptime {
   color: #FFC95E;
-  font-size: min(5.3vh, 9.6vw);
+  font-size: min(calc(var(--fh) * .053), calc(var(--fw) * .096));
   -webkit-text-stroke: 0;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .45);
 }
@@ -430,22 +459,22 @@ body[data-layout="portrait"] .ptime {
    next-prayer cell itself switches to the red iqama countdown. */
 body[data-layout="portrait"] #bottomcluster {
   position: absolute; left: 0; right: 0; bottom: 0;
-  height: 13.5vh;
+  height: calc(var(--fh) * .135);
   align-items: center; justify-content: space-around;
-  padding: 0 5vw .5vh;
+  padding: 0 calc(var(--fw) * .05) calc(var(--fh) * .005);
   color: #fff;
   text-shadow: 0 2px 12px rgba(0, 0, 0, .4);
 }
 body[data-layout="portrait"] #iqama-col,
 body[data-layout="portrait"] #iqama-col + .vdiv { display: none; }
 body[data-layout="portrait"] #bottomcluster .vdiv {
-  align-self: center; height: 7.5vh; margin: 0;
+  align-self: center; height: calc(var(--fh) * .075); margin: 0;
 }
-body[data-layout="portrait"] #bottomcluster .blabel { font-size: min(2.7vh, 5vw); }
-body[data-layout="portrait"] #bottomcluster .bval { font-size: min(4.5vh, 8.2vw); }
+body[data-layout="portrait"] #bottomcluster .blabel { font-size: min(calc(var(--fh) * .027), calc(var(--fw) * .05)); }
+body[data-layout="portrait"] #bottomcluster .bval { font-size: min(calc(var(--fh) * .045), calc(var(--fw) * .082)); }
 body[data-layout="portrait"] .bname {
   display: block;
-  font-size: min(3.5vh, 6.4vw);
+  font-size: min(calc(var(--fh) * .035), calc(var(--fw) * .064));
   font-weight: 700; line-height: 1.25;
 }
 /* light bottom strips (pbg1/pbg3/pbg4 cyan, pbg2 grey) take navy text;
@@ -472,9 +501,22 @@ body[data-layout="portrait"] #next-col.alert #nextname { visibility: hidden; }
    tall narrow column beside the icon. */
 body[data-layout="portrait"] #iqama-alert {
   top: 56%;
-  width: min(88vw, 62vh);
+  width: min(calc(var(--fw) * .88), calc(var(--fh) * .62));
   flex-direction: column;
-  gap: 1.5vh;
+  gap: calc(var(--fh) * .015);
+  /* the base rule's padding/radius are also viewport-unit sized — restated
+     in frame units so the banner keeps its native-portrait proportions
+     inside the rotated frame too */
+  padding: calc(var(--fh) * .028) calc(var(--fw) * .03);
+  border-radius: calc(var(--fh) * .032);
 }
-body[data-layout="portrait"] #iqama-alert .ia-icon { font-size: min(9vh, 14vw); }
-body[data-layout="portrait"] #iqama-alert .ia-text { font-size: min(6.8vh, 10.5vw); }
+body[data-layout="portrait"] #iqama-alert .ia-icon { font-size: min(calc(var(--fh) * .09), calc(var(--fw) * .14)); }
+body[data-layout="portrait"] #iqama-alert .ia-text { font-size: min(calc(var(--fh) * .068), calc(var(--fw) * .105)); }
+
+/* the toast shares the base rule's viewport units — frame-unit restatement
+   for portrait, identical on a native portrait screen */
+body[data-layout="portrait"] #toast {
+  bottom: calc(var(--fh) * .06);
+  padding: calc(var(--fh) * .011) calc(var(--fw) * .022);
+  font-size: min(calc(var(--fh) * .034), calc(var(--fw) * .05));
+}
