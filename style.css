@@ -22,7 +22,7 @@ body {
 }
 
 #bg {
-  position: fixed; inset: 0;
+  position: fixed; inset: 0; z-index: 0;
   background: center center / cover no-repeat;
   background-image: url('bg.jpg');
 }
@@ -31,24 +31,49 @@ body[data-bg="2"] #bg { background-image: url('bg2.jpg'); }
 body[data-bg="3"] #bg { background-image: url('bg3.jpg'); }
 body[data-bg="4"] #bg { background-image: url('bg4.jpg'); }
 body[data-bg="5"] #bg { background-image: url('bg5.jpg'); }
+body[data-bg="6"] #bg { background-image: url('bg6.jpg'); }
+body[data-bg="7"] #bg { background-image: url('bg7.jpg'); }
+body[data-bg="8"] #bg { background-image: url('bg8.jpg'); }
+body[data-bg="9"] #bg { background-image: url('bg9.jpg'); }
 
-/* Dark left zones (bg2 navy, bg3 teal, bg5 black): prayer names go white,
-   times a brighter coral — far-away legibility wins. Bright-left
-   backgrounds (bg.jpg, bg4) keep navy names + the standard red. */
+/* Dark left zones (bg2 navy, bg3 teal, bg5 black, bg7 textured dark,
+   bg8 emerald): prayer names go white, times a brighter coral — far-away
+   legibility wins. Bright-left backgrounds (bg.jpg, bg4) keep navy names
+   + the standard red. */
 body[data-bg="2"] .pname,
 body[data-bg="3"] .pname,
-body[data-bg="5"] .pname {
+body[data-bg="5"] .pname,
+body[data-bg="7"] .pname,
+body[data-bg="8"] .pname {
   color: #fff;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .4);
 }
 body[data-bg="2"] .ptime,
 body[data-bg="3"] .ptime,
-body[data-bg="5"] .ptime {
+body[data-bg="5"] .ptime,
+body[data-bg="7"] .ptime,
+body[data-bg="8"] .ptime {
   color: #FF8A75;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .4);
 }
 
-#stage { position: fixed; inset: 0; }
+/* bg9 (burnt-orange left / blue right): navy names stay, times go deep
+   maroon — the red-family tone that stands out on orange. */
+body[data-bg="9"] .ptime { color: #8E1414; }
+
+/* bg6 (bright gold left, bright cyan right — the inverse case): white text
+   would wash out, so the WHOLE right zone goes navy like the left names,
+   times deepen to a strong red, dividers turn navy, and the gear becomes
+   a light chip with a dark glyph so it stays visible. */
+body[data-bg="6"] .ptime { color: #C62828; }
+body[data-bg="6"] #rightzone {
+  color: #0A2C5D;
+  text-shadow: 0 2px 14px rgba(255, 255, 255, .35);
+}
+body[data-bg="6"] .vdiv { background: rgba(10, 44, 93, .45); }
+body[data-bg="6"] #gear { background: rgba(255, 255, 255, .55); color: #0A2C5D; }
+
+#stage { position: fixed; inset: 0; z-index: 2; }
 
 /* ---------- Left zone: prayer rows ---------- */
 #prayers {
@@ -132,6 +157,45 @@ body[data-bg="5"] .ptime {
 .bcol { text-align: center; }
 .blabel { font-size: min(3.9vh, 6vw); line-height: 1.3; }
 .bval { font-size: min(7.8vh, 11.5vw); line-height: 1.15; direction: ltr; }
+
+/* ---------- Iqama-window silent-phone warning ---------- */
+/* The veil darkens ONLY the background picture: it stacks under #stage
+   (z-index 1 < 2), so the clock, the bottom cluster and every prayer row
+   stay fully lit and readable above it. The warning panel itself rides
+   above the stage, centered, and never intercepts clicks. */
+#iqamaveil {
+  position: fixed; inset: 0; z-index: 1;
+  background: rgba(3, 10, 26, .55);
+}
+#iqamaveil[hidden] { display: none; }
+#iqama-alert {
+  position: fixed; left: 50%; top: 48.5%; z-index: 30;
+  transform: translate(-50%, -50%);
+  width: min(86vw, 150vh);
+  display: flex; align-items: center; justify-content: center; gap: 2.5vw;
+  text-align: center;
+  background: rgba(4, 14, 34, .88);
+  border: 3px solid rgba(255, 209, 102, .85);
+  border-radius: 3.2vh;
+  padding: 2.8vh 3vw;
+  box-shadow: 0 0 60px rgba(0, 0, 0, .55);
+  pointer-events: none;
+}
+#iqama-alert[hidden] { display: none; }
+#iqama-alert .ia-icon {
+  font-size: min(12vh, 17vw); line-height: 1.15;
+}
+#iqama-alert .ia-text {
+  color: #FFD166;
+  font-size: min(7.8vh, 11.5vw);
+  font-weight: 700; line-height: 1.35;
+}
+/* while the warning is up, the iqama cell itself burns bright red */
+#iqama-col.alert .blabel,
+#iqama-col.alert .bval {
+  color: #FF3131;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .45);
+}
 
 /* ---------- Toast (background change feedback) ---------- */
 #toast {

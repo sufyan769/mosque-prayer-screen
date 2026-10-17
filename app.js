@@ -27,8 +27,8 @@ const offsets = Object.assign({ fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 }
 const clampNum = (v, a, b) => Math.min(b, Math.max(a, v));
 let hijriOffset = clampNum(parseInt(store.get('mps_hijri', '0'), 10) || 0, -3, 3);
 
-/* background cycling: five images, Fajr-row click advances, persisted */
-const BG_COUNT = 5;
+/* background cycling: nine images, Fajr-row click advances, persisted */
+const BG_COUNT = 9;
 let bgIndex = clampNum(parseInt(store.get('mps_bg', '0'), 10) || 0, 0, BG_COUNT - 1);
 function applyBg() { document.body.setAttribute('data-bg', String(bgIndex + 1)); }
 applyBg();
@@ -209,6 +209,24 @@ function renderDay(bn) {
   safeSet('mosquename', mosqueName);
 }
 
+/* Iqama-window alert: while the current prayer's iqama countdown runs
+   (now ∈ [adhan, adhan+iqama)) a center-screen «ضع الهاتف على الصامت»
+   warning shows and the iqama cell turns red. The state is a pure function
+   of the current time, recomputed on every tick — nothing is stored, so a
+   reload in the middle of the window lands in the correct state. A prayer
+   with 0 iqama minutes has an empty window and never alerts. */
+let alertState = null;
+function setIqamaAlert(on) {
+  if (on === alertState) return;
+  alertState = on;
+  try {
+    const veil = $('iqamaveil'), box = $('iqama-alert'), col = $('iqama-col');
+    if (veil) veil.hidden = !on;
+    if (box) box.hidden = !on;
+    if (col) col.classList.toggle('alert', on);
+  } catch (e) {}
+}
+
 function tick() {
   let bn;
   try { bn = baghdadNow(); } catch (e) { return; }
@@ -223,16 +241,16 @@ function tick() {
   }
 
   const city = cityById[cityId];
-  if (!city) return;
+  if (!city) { setIqamaAlert(false); return; }
   const nowSec = bn.h * 3600 + bn.mi * 60 + bn.s;
 
   const evs = PRAYERS.map(p => {
     const mins = prayerMinutes(city, bn.y, bn.mo, bn.d, p);
     return { p, sec: mins === null ? null : mins * 60 };
   }).filter(e => e.sec !== null);
-  if (!evs.length) return;
+  if (!evs.length) { setIqamaAlert(false); return; }
 
-  let cdAdhan = null, cdIqama = null;
+  let cdAdhan = null, cdIqama = null, inIqamaWindow = false;
   const idx = evs.findIndex(e => e.sec > nowSec);
 
   if (idx === -1) {
@@ -245,6 +263,7 @@ function tick() {
     if (nowSec < lastIqamaEnd) {
       cdIqama = lastIqamaEnd - nowSec;
       cdAdhan = adhanAbs;
+      inIqamaWindow = true;
     } else {
       cdAdhan = adhanAbs;
       cdIqama = adhanAbs === null ? null : adhanAbs + (iqamaMin[PRAYERS[0].key] || 0) * 60;
@@ -257,6 +276,7 @@ function tick() {
          next-adhan already targets the following prayer */
       cdIqama = prev.sec + (iqamaMin[prev.p.key] || 0) * 60 - nowSec;
       cdAdhan = next.sec - nowSec;
+      inIqamaWindow = true;
     } else {
       cdAdhan = next.sec - nowSec;
       cdIqama = cdAdhan + (iqamaMin[next.p.key] || 0) * 60;
@@ -265,6 +285,7 @@ function tick() {
 
   safeSet('cd-adhan', cdAdhan === null ? '--:--' : fmtCountdown(cdAdhan));
   safeSet('cd-iqama', cdIqama === null ? '--:--' : fmtCountdown(cdIqama));
+  setIqamaAlert(inIqamaWindow);
 }
 
 /* ---------- settings panel ---------- */

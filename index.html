@@ -36,7 +36,7 @@
         <div class="bval num" id="cd-adhan">--:--</div>
       </div>
       <div class="vdiv"></div>
-      <div class="bcol">
+      <div class="bcol" id="iqama-col">
         <div class="blabel">الإقامة</div>
         <div class="bval num" id="cd-iqama">--:--</div>
       </div>
@@ -48,6 +48,14 @@
     </div>
   </section>
 </main>
+
+<!-- Iqama-window silent-phone warning: the veil sits UNDER the stage so the
+     clock and bottom cluster stay fully visible above it -->
+<div id="iqamaveil" hidden></div>
+<div id="iqama-alert" hidden role="alert">
+  <div class="ia-icon">📵</div>
+  <div class="ia-text">يرجى وضع الهاتف على الوضع الصامت</div>
+</div>
 
 <div id="toast" role="status"></div>
 
