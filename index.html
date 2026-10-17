@@ -6,24 +6,23 @@
 <title>مواقيت الصلاة</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-bg="1">
 <div id="bg"></div>
 
 <main id="stage">
   <!-- Left zone: the five prayer rows -->
   <section id="prayers"></section>
 
-  <!-- Right zone: date cluster, mosque name, clock, countdowns -->
+  <!-- Right zone: dates cluster, mosque name, clock, countdowns + sunrise -->
   <section id="rightzone">
     <div id="topcluster">
       <div class="tcol">
-        <div class="tline1"><span id="weekday"></span><span id="monthname"></span></div>
-        <div class="tdate num" id="fulldate"></div>
+        <div class="tline1"><span id="weekday"></span></div>
+        <div class="tdate"><span class="num" id="daynum"></span> <span id="monthname"></span></div>
       </div>
       <div class="vdiv"></div>
-      <div class="tcol">
-        <div class="tlabel">الشروق</div>
-        <div class="tval num" id="sunrise"></div>
+      <div class="tcol tcol-hijri">
+        <div class="thijri" id="hijri"></div>
       </div>
     </div>
 
@@ -41,9 +40,16 @@
         <div class="blabel">الإقامة</div>
         <div class="bval num" id="cd-iqama">--:--</div>
       </div>
+      <div class="vdiv"></div>
+      <div class="bcol">
+        <div class="blabel">الشروق</div>
+        <div class="bval num" id="sunrise">--:--</div>
+      </div>
     </div>
   </section>
 </main>
+
+<div id="toast" role="status"></div>
 
 <button id="gear" title="الإعدادات" aria-label="الإعدادات">⚙</button>
 
@@ -51,11 +57,13 @@
   <div class="p-head"><span>الإعدادات</span><button id="p-close" aria-label="إغلاق">✕</button></div>
 
   <label class="p-label" for="p-mosque">اسم المسجد</label>
-  <input id="p-mosque" type="text" autocomplete="off">
+  <textarea id="p-mosque" rows="2" autocomplete="off"></textarea>
 
   <label class="p-label" for="p-search">المدينة</label>
   <input id="p-search" type="text" placeholder="ابحث عن مدينة…" autocomplete="off">
   <div id="p-cities"></div>
+
+  <div id="p-hijri"></div>
 
   <div id="p-rows"></div>
 

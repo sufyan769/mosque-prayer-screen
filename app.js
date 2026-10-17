@@ -24,6 +24,14 @@ let cityId = store.get('mps_city', 'kirkuk');
 let mosqueName = store.get('mps_mosque', 'مسجد النور');
 const iqamaMin = Object.assign({ fajr: 10, dhuhr: 10, asr: 10, maghrib: 10, isha: 10 }, store.getJSON('mps_iqama', {}));
 const offsets = Object.assign({ fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 }, store.getJSON('mps_offsets', {}));
+const clampNum = (v, a, b) => Math.min(b, Math.max(a, v));
+let hijriOffset = clampNum(parseInt(store.get('mps_hijri', '0'), 10) || 0, -3, 3);
+
+/* background cycling: five images, Fajr-row click advances, persisted */
+const BG_COUNT = 5;
+let bgIndex = clampNum(parseInt(store.get('mps_bg', '0'), 10) || 0, 0, BG_COUNT - 1);
+function applyBg() { document.body.setAttribute('data-bg', String(bgIndex + 1)); }
+applyBg();
 
 const CITIES = (typeof PRAYER_DATA !== 'undefined') ? PRAYER_DATA : [];
 const cityById = {};
@@ -60,6 +68,21 @@ const pad = n => String(n).padStart(2, '0');
 function datePlus(y, mo, d, add) {
   const t = new Date(Date.UTC(y, mo - 1, d + add));
   return { y: t.getUTCFullYear(), mo: t.getUTCMonth() + 1, d: t.getUTCDate() };
+}
+
+/* Hijri (Umm al-Qura) day + month only, no year — formatted in Baghdad */
+const dtfHijri = new Intl.DateTimeFormat('ar-u-ca-islamic-umalqura-nu-latn', {
+  timeZone: 'Asia/Baghdad', day: 'numeric', month: 'long',
+});
+function hijriText(y, mo, d) {
+  /* noon UTC = 15:00 in Baghdad — same civil date, safe from edge rollovers */
+  const t = new Date(Date.UTC(y, mo - 1, d, 12, 0, 0));
+  let day = '', month = '';
+  for (const p of dtfHijri.formatToParts(t)) {
+    if (p.type === 'day') day = p.value;
+    if (p.type === 'month') month = p.value;
+  }
+  return day + ' ' + month;
 }
 
 function dayTimes(city, y, mo, d) {
@@ -101,14 +124,37 @@ const $ = id => document.getElementById(id);
 const rowsEl = $('prayers');
 const rowTimeEls = {};
 
+/* brief unobtrusive toast, e.g. «خلفية 2 من 5» */
+let toastTimer = null;
+function showToast(msg) {
+  const t = $('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+function cycleBg() {
+  bgIndex = (bgIndex + 1) % BG_COUNT;
+  store.set('mps_bg', String(bgIndex));
+  applyBg();
+  showToast('خلفية ' + (bgIndex + 1) + ' من ' + BG_COUNT);
+}
+
 PRAYERS.forEach(p => {
   const row = document.createElement('div');
   row.className = 'prow';
+  row.dataset.key = p.key;
   const nm = document.createElement('span');
   nm.className = 'pname'; nm.textContent = p.name;
   const tm = document.createElement('span');
   tm.className = 'ptime num';
   row.appendChild(nm); row.appendChild(tm);
+  if (p.key === 'fajr') {
+    row.title = 'تغيير الخلفية';
+    row.addEventListener('click', cycleBg);
+  }
   rowsEl.appendChild(row);
   rowTimeEls[p.key] = tm;
 });
@@ -128,14 +174,16 @@ function renderDay(bn) {
     $('sunrise').textContent = fmt12(H * 60 + M);
   }
   $('weekday').textContent = bn.weekday;
+  $('daynum').textContent = bn.d;
   $('monthname').textContent = bn.month;
-  $('fulldate').textContent = bn.y + '-' + pad(bn.mo) + '-' + pad(bn.d);
+  const hd = datePlus(bn.y, bn.mo, bn.d, hijriOffset);
+  $('hijri').textContent = hijriText(hd.y, hd.mo, hd.d);
   $('mosquename').textContent = mosqueName;
 }
 
 function tick() {
   const bn = baghdadNow();
-  const dateKey = bn.y + '-' + bn.mo + '-' + bn.d + '|' + cityId;
+  const dateKey = bn.y + '-' + bn.mo + '-' + bn.d + '|' + cityId + '|' + hijriOffset;
   if (dateKey !== lastDateKey) { lastDateKey = dateKey; renderDay(bn); }
 
   $('clock').textContent = fmtClock12(bn.h, bn.mi, bn.s);
@@ -245,6 +293,16 @@ function stepper(label, unit, value, onChange) {
   return wrap;
 }
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+/* Hijri date correction: −3..+3 days, one per tap, persisted */
+$('p-hijri').appendChild(stepper('تعديل التاريخ الهجري', 'يوم', hijriOffset, d => {
+  hijriOffset = clamp(hijriOffset + d, -3, 3);
+  store.set('mps_hijri', String(hijriOffset));
+  lastDateKey = ''; // re-render the Hijri date
+  tick();
+  return hijriOffset;
+}));
+
 PRAYERS.forEach(p => {
   const block = document.createElement('div');
   block.className = 'p-prow';

@@ -23,7 +23,29 @@ body {
 
 #bg {
   position: fixed; inset: 0;
-  background: url('bg.jpg') center center / cover no-repeat;
+  background: center center / cover no-repeat;
+  background-image: url('bg.jpg');
+}
+body[data-bg="1"] #bg { background-image: url('bg.jpg'); }
+body[data-bg="2"] #bg { background-image: url('bg2.jpg'); }
+body[data-bg="3"] #bg { background-image: url('bg3.jpg'); }
+body[data-bg="4"] #bg { background-image: url('bg4.jpg'); }
+body[data-bg="5"] #bg { background-image: url('bg5.jpg'); }
+
+/* Dark left zones (bg2 navy, bg3 teal, bg5 black): prayer names go white,
+   times a brighter coral — far-away legibility wins. Bright-left
+   backgrounds (bg.jpg, bg4) keep navy names + the standard red. */
+body[data-bg="2"] .pname,
+body[data-bg="3"] .pname,
+body[data-bg="5"] .pname {
+  color: #fff;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .4);
+}
+body[data-bg="2"] .ptime,
+body[data-bg="3"] .ptime,
+body[data-bg="5"] .ptime {
+  color: #FF8A75;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .4);
 }
 
 #stage { position: fixed; inset: 0; }
@@ -41,6 +63,7 @@ body {
   justify-content: space-between;
   white-space: nowrap;
 }
+.prow[data-key="fajr"] { cursor: pointer; }
 .pname {
   color: #0A2C5D;
   font-size: min(8.6vh, 12.5vw);
@@ -69,16 +92,16 @@ body {
   margin: .6vh 2.4vw;
 }
 
-/* top cluster: date (right) | sunrise (left) */
-#topcluster { display: flex; align-items: flex-start; }
+/* top cluster: Gregorian date (right) | Hijri date (left) — no years */
+#topcluster { display: flex; align-items: stretch; }
 .tcol { text-align: center; }
 .tline1 {
   display: flex; justify-content: center; gap: 1.6vw;
   font-size: min(4.3vh, 6.5vw); line-height: 1.25;
 }
-.tdate { font-size: min(5.7vh, 8.5vw); line-height: 1.2; direction: ltr; }
-.tlabel { font-size: min(4.3vh, 6.5vw); line-height: 1.25; }
-.tval { font-size: min(5.7vh, 8.5vw); line-height: 1.2; direction: ltr; }
+.tdate { font-size: min(5.7vh, 8.5vw); line-height: 1.2; }
+.tcol-hijri { display: flex; align-items: center; justify-content: center; }
+.thijri { font-size: min(5.7vh, 8.5vw); line-height: 1.2; white-space: nowrap; }
 
 /* mosque name — headline of the right zone, above the clock */
 #mosquename {
@@ -88,7 +111,7 @@ body {
   font-weight: 700;
   line-height: 1.3;
   margin-top: 2.6vh;
-  white-space: nowrap; overflow: hidden;
+  white-space: pre-line;
 }
 
 /* big clock — low and to the right, clear of the gold band */
@@ -104,11 +127,22 @@ body {
   cursor: pointer;
 }
 
-/* bottom cluster: next adhan (right) | iqama (left) */
+/* bottom cluster: next adhan (right) | iqama | sunrise (left) */
 #bottomcluster { display: flex; align-items: flex-start; }
 .bcol { text-align: center; }
 .blabel { font-size: min(3.9vh, 6vw); line-height: 1.3; }
 .bval { font-size: min(7.8vh, 11.5vw); line-height: 1.15; direction: ltr; }
+
+/* ---------- Toast (background change feedback) ---------- */
+#toast {
+  position: fixed; left: 50%; bottom: 6vh; transform: translateX(-50%);
+  z-index: 60; pointer-events: none;
+  background: rgba(6, 29, 64, .85); color: #fff;
+  padding: 1.1vh 2.2vw; border-radius: 999px;
+  font-size: min(3.4vh, 5vw); line-height: 1.3;
+  opacity: 0; transition: opacity .25s ease;
+}
+#toast.show { opacity: 1; }
 
 /* ---------- Settings ---------- */
 #gear {
@@ -148,6 +182,17 @@ body {
   font-family: inherit; font-size: 17px;
 }
 #panel input[type="text"]::placeholder { color: rgba(255, 255, 255, .55); }
+#panel textarea {
+  width: 100%; padding: 9px 11px;
+  border-radius: 8px; border: 1px solid rgba(255, 255, 255, .35);
+  background: rgba(255, 255, 255, .1); color: #fff;
+  font-family: inherit; font-size: 17px; line-height: 1.45;
+  resize: vertical;
+}
+#p-hijri {
+  margin-top: 16px; padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, .15);
+}
 #p-cities {
   margin-top: 8px; max-height: 240px; overflow-y: auto;
   border: 1px solid rgba(255, 255, 255, .22); border-radius: 8px;
