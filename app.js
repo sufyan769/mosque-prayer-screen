@@ -1,0 +1,272 @@
+'use strict';
+/* Mosque prayer screen — user's design.
+   Data: PRAYER_DATA (data.js) — 167 Iraqi cities, slots [Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha], 24h.
+   All clock math is done on the Baghdad (Asia/Baghdad) wall clock. */
+
+const PRAYERS = [
+  { key: 'fajr',    name: 'الفجر',   slot: 0 },
+  { key: 'dhuhr',   name: 'الظهر',   slot: 2 },
+  { key: 'asr',     name: 'العصر',   slot: 3 },
+  { key: 'maghrib', name: 'المغرب',  slot: 4 },
+  { key: 'isha',    name: 'العشاء',  slot: 5 },
+];
+const SUNRISE_SLOT = 1;
+
+/* ---------- persisted settings ---------- */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  getJSON(k, d) { try { const v = JSON.parse(localStorage.getItem(k)); return v && typeof v === 'object' ? v : d; } catch (e) { return d; } },
+  setJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+};
+
+let cityId = store.get('mps_city', 'kirkuk');
+let mosqueName = store.get('mps_mosque', 'مسجد النور');
+const iqamaMin = Object.assign({ fajr: 10, dhuhr: 10, asr: 10, maghrib: 10, isha: 10 }, store.getJSON('mps_iqama', {}));
+const offsets = Object.assign({ fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 }, store.getJSON('mps_offsets', {}));
+
+const CITIES = (typeof PRAYER_DATA !== 'undefined') ? PRAYER_DATA : [];
+const cityById = {};
+CITIES.forEach(c => { cityById[c.id] = c; });
+if (!cityById[cityId]) cityId = cityById['kirkuk'] ? 'kirkuk' : (CITIES[0] && CITIES[0].id);
+
+/* ---------- Baghdad wall clock ---------- */
+const dtfParts = new Intl.DateTimeFormat('en-GB-u-nu-latn', {
+  timeZone: 'Asia/Baghdad', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+});
+const dtfNames = new Intl.DateTimeFormat('ar-u-nu-latn', {
+  timeZone: 'Asia/Baghdad', weekday: 'long', month: 'long',
+});
+
+function baghdadNow() {
+  const now = new Date();
+  const o = {};
+  for (const p of dtfParts.formatToParts(now)) o[p.type] = p.value;
+  let weekday = '', month = '';
+  for (const p of dtfNames.formatToParts(now)) {
+    if (p.type === 'weekday') weekday = p.value;
+    if (p.type === 'month') month = p.value;
+  }
+  return {
+    y: +o.year, mo: +o.month, d: +o.day,
+    h: +o.hour, mi: +o.minute, s: +o.second,
+    weekday, month,
+  };
+}
+
+const pad = n => String(n).padStart(2, '0');
+
+function datePlus(y, mo, d, add) {
+  const t = new Date(Date.UTC(y, mo - 1, d + add));
+  return { y: t.getUTCFullYear(), mo: t.getUTCMonth() + 1, d: t.getUTCDate() };
+}
+
+function dayTimes(city, y, mo, d) {
+  const key = pad(mo) + '-' + pad(d);
+  let t = city.times[key];
+  if (!t && key === '02-29') t = city.times['02-28']; // only Hawijah carries 02-29
+  return t || null;
+}
+
+/* minutes-of-day for a prayer's adhan on a given date, offset applied */
+function prayerMinutes(city, y, mo, d, p) {
+  const t = dayTimes(city, y, mo, d);
+  if (!t) return null;
+  const [H, M] = t[p.slot].split(':').map(Number);
+  return H * 60 + M + (offsets[p.key] || 0);
+}
+
+function fmt12(minsOfDay) {
+  let m = ((minsOfDay % 1440) + 1440) % 1440;
+  const h24 = Math.floor(m / 60), mm = m % 60;
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return pad(h12) + ':' + pad(mm);
+}
+
+function fmtClock12(h, mi, s) {
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return pad(h12) + ':' + pad(mi) + ':' + pad(s);
+}
+
+/* countdown: >= 1h -> HH:MM, < 1h -> MM:SS, never negative */
+function fmtCountdown(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  if (sec >= 3600) return pad(Math.floor(sec / 3600)) + ':' + pad(Math.floor((sec % 3600) / 60));
+  return pad(Math.floor(sec / 60)) + ':' + pad(sec % 60);
+}
+
+/* ---------- DOM ---------- */
+const $ = id => document.getElementById(id);
+const rowsEl = $('prayers');
+const rowTimeEls = {};
+
+PRAYERS.forEach(p => {
+  const row = document.createElement('div');
+  row.className = 'prow';
+  const nm = document.createElement('span');
+  nm.className = 'pname'; nm.textContent = p.name;
+  const tm = document.createElement('span');
+  tm.className = 'ptime num';
+  row.appendChild(nm); row.appendChild(tm);
+  rowsEl.appendChild(row);
+  rowTimeEls[p.key] = tm;
+});
+
+let lastDateKey = '';
+
+function renderDay(bn) {
+  const city = cityById[cityId];
+  if (!city) return;
+  PRAYERS.forEach(p => {
+    const mins = prayerMinutes(city, bn.y, bn.mo, bn.d, p);
+    rowTimeEls[p.key].textContent = mins === null ? '--:--' : fmt12(mins);
+  });
+  const t = dayTimes(city, bn.y, bn.mo, bn.d);
+  if (t) {
+    const [H, M] = t[SUNRISE_SLOT].split(':').map(Number);
+    $('sunrise').textContent = fmt12(H * 60 + M);
+  }
+  $('weekday').textContent = bn.weekday;
+  $('monthname').textContent = bn.month;
+  $('fulldate').textContent = bn.y + '-' + pad(bn.mo) + '-' + pad(bn.d);
+  $('mosquename').textContent = mosqueName;
+}
+
+function tick() {
+  const bn = baghdadNow();
+  const dateKey = bn.y + '-' + bn.mo + '-' + bn.d + '|' + cityId;
+  if (dateKey !== lastDateKey) { lastDateKey = dateKey; renderDay(bn); }
+
+  $('clock').textContent = fmtClock12(bn.h, bn.mi, bn.s);
+
+  const city = cityById[cityId];
+  if (!city) return;
+  const nowSec = bn.h * 3600 + bn.mi * 60 + bn.s;
+
+  const evs = PRAYERS.map(p => {
+    const mins = prayerMinutes(city, bn.y, bn.mo, bn.d, p);
+    return { p, sec: mins === null ? null : mins * 60 };
+  }).filter(e => e.sec !== null);
+  if (!evs.length) return;
+
+  let cdAdhan = null, cdIqama = null;
+  const idx = evs.findIndex(e => e.sec > nowSec);
+
+  if (idx === -1) {
+    /* after the last adhan of the day: maybe still inside Isha's iqama window */
+    const last = evs[evs.length - 1];
+    const lastIqamaEnd = last.sec + (iqamaMin[last.p.key] || 0) * 60;
+    const tm = datePlus(bn.y, bn.mo, bn.d, 1);
+    const fajrTomorrow = prayerMinutes(city, tm.y, tm.mo, tm.d, PRAYERS[0]);
+    const adhanAbs = (fajrTomorrow === null) ? null : (86400 - nowSec) + fajrTomorrow * 60;
+    if (nowSec < lastIqamaEnd) {
+      cdIqama = lastIqamaEnd - nowSec;
+      cdAdhan = adhanAbs;
+    } else {
+      cdAdhan = adhanAbs;
+      cdIqama = adhanAbs === null ? null : adhanAbs + (iqamaMin[PRAYERS[0].key] || 0) * 60;
+    }
+  } else {
+    const next = evs[idx];
+    const prev = idx > 0 ? evs[idx - 1] : null;
+    if (prev && nowSec < prev.sec + (iqamaMin[prev.p.key] || 0) * 60) {
+      /* inside the previous prayer's iqama window: iqama counts that window,
+         next-adhan already targets the following prayer */
+      cdIqama = prev.sec + (iqamaMin[prev.p.key] || 0) * 60 - nowSec;
+      cdAdhan = next.sec - nowSec;
+    } else {
+      cdAdhan = next.sec - nowSec;
+      cdIqama = cdAdhan + (iqamaMin[next.p.key] || 0) * 60;
+    }
+  }
+
+  $('cd-adhan').textContent = cdAdhan === null ? '--:--' : fmtCountdown(cdAdhan);
+  $('cd-iqama').textContent = cdIqama === null ? '--:--' : fmtCountdown(cdIqama);
+}
+
+/* ---------- settings panel ---------- */
+const panel = $('panel');
+function togglePanel(force) {
+  const show = typeof force === 'boolean' ? force : panel.hidden;
+  panel.hidden = !show;
+}
+$('gear').addEventListener('click', () => togglePanel());
+$('clock').addEventListener('click', () => togglePanel());
+$('p-close').addEventListener('click', () => togglePanel(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') togglePanel(false); });
+
+const mosqueInput = $('p-mosque');
+mosqueInput.value = mosqueName;
+mosqueInput.addEventListener('input', () => {
+  mosqueName = mosqueInput.value.trim() || 'مسجد النور';
+  store.set('mps_mosque', mosqueName);
+  $('mosquename').textContent = mosqueName;
+});
+
+/* city search + list */
+const citiesEl = $('p-cities');
+function renderCities(filter) {
+  citiesEl.innerHTML = '';
+  const q = (filter || '').trim();
+  CITIES.forEach(c => {
+    if (q && !(c.nameAr.includes(q) || (c.nameEn || '').toLowerCase().includes(q.toLowerCase()))) return;
+    const b = document.createElement('button');
+    b.className = 'city-item' + (c.id === cityId ? ' active' : '');
+    b.textContent = c.nameAr;
+    b.addEventListener('click', () => {
+      cityId = c.id;
+      store.set('mps_city', cityId);
+      lastDateKey = ''; // force re-render
+      renderCities(q);
+      tick();
+    });
+    citiesEl.appendChild(b);
+  });
+}
+$('p-search').addEventListener('input', e => renderCities(e.target.value));
+renderCities('');
+
+/* per-prayer iqama + offset steppers */
+const rowsCtl = $('p-rows');
+function stepper(label, unit, value, onChange) {
+  const wrap = document.createElement('div');
+  wrap.className = 'p-step-line';
+  const lab = document.createElement('span'); lab.textContent = label;
+  const step = document.createElement('div'); step.className = 'step';
+  const dec = document.createElement('button'); dec.textContent = '−'; dec.setAttribute('aria-label', 'إنقاص');
+  const val = document.createElement('span'); val.className = 'val num'; val.textContent = value;
+  const inc = document.createElement('button'); inc.textContent = '+'; inc.setAttribute('aria-label', 'زيادة');
+  const unitEl = document.createElement('span'); unitEl.className = 'unit'; unitEl.textContent = unit;
+  dec.addEventListener('click', () => { val.textContent = onChange(-1); });
+  inc.addEventListener('click', () => { val.textContent = onChange(1); });
+  step.appendChild(dec); step.appendChild(val); step.appendChild(inc); step.appendChild(unitEl);
+  wrap.appendChild(lab); wrap.appendChild(step);
+  return wrap;
+}
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+PRAYERS.forEach(p => {
+  const block = document.createElement('div');
+  block.className = 'p-prow';
+  const title = document.createElement('div');
+  title.className = 'p-pname'; title.textContent = p.name;
+  block.appendChild(title);
+  block.appendChild(stepper('الإقامة بعد الأذان', 'دقيقة', iqamaMin[p.key], d => {
+    iqamaMin[p.key] = clamp((iqamaMin[p.key] || 0) + d, 0, 60);
+    store.setJSON('mps_iqama', iqamaMin);
+    tick();
+    return iqamaMin[p.key];
+  }));
+  block.appendChild(stepper('تعديل الوقت', 'دقيقة', offsets[p.key], d => {
+    offsets[p.key] = clamp((offsets[p.key] || 0) + d, -30, 30);
+    store.setJSON('mps_offsets', offsets);
+    lastDateKey = ''; // re-render displayed times
+    tick();
+    return offsets[p.key];
+  }));
+  rowsCtl.appendChild(block);
+});
+
+/* ---------- run ---------- */
+tick();
+setInterval(tick, 500);

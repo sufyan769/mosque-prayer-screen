@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مواقيت الصلاة</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="bg"></div>
+
+<main id="stage">
+  <!-- Left zone: the five prayer rows -->
+  <section id="prayers"></section>
+
+  <!-- Right zone: date cluster, mosque name, clock, countdowns -->
+  <section id="rightzone">
+    <div id="topcluster">
+      <div class="tcol">
+        <div class="tline1"><span id="weekday"></span><span id="monthname"></span></div>
+        <div class="tdate num" id="fulldate"></div>
+      </div>
+      <div class="vdiv"></div>
+      <div class="tcol">
+        <div class="tlabel">الشروق</div>
+        <div class="tval num" id="sunrise"></div>
+      </div>
+    </div>
+
+    <div id="mosquename">مسجد النور</div>
+
+    <div id="clockwrap"><div id="clock" class="num" title="الإعدادات">00:00:00</div></div>
+
+    <div id="bottomcluster">
+      <div class="bcol">
+        <div class="blabel">الأذان التالي</div>
+        <div class="bval num" id="cd-adhan">--:--</div>
+      </div>
+      <div class="vdiv"></div>
+      <div class="bcol">
+        <div class="blabel">الإقامة</div>
+        <div class="bval num" id="cd-iqama">--:--</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<button id="gear" title="الإعدادات" aria-label="الإعدادات">⚙</button>
+
+<aside id="panel" hidden>
+  <div class="p-head"><span>الإعدادات</span><button id="p-close" aria-label="إغلاق">✕</button></div>
+
+  <label class="p-label" for="p-mosque">اسم المسجد</label>
+  <input id="p-mosque" type="text" autocomplete="off">
+
+  <label class="p-label" for="p-search">المدينة</label>
+  <input id="p-search" type="text" placeholder="ابحث عن مدينة…" autocomplete="off">
+  <div id="p-cities"></div>
+
+  <div id="p-rows"></div>
+
+  <p class="p-hint">تُحفظ الإعدادات تلقائيًا على هذا الجهاز.</p>
+</aside>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
