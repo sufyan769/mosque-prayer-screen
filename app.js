@@ -387,16 +387,112 @@ function tick() {
   setIqamaAlert(inIqamaWindow);
 }
 
-/* ---------- settings panel ---------- */
+/* ---------- settings page ----------
+   A separate full page, not an overlay (the user's explicit request):
+   opening it replaces the main screen entirely. Two views — the main
+   settings list (#s-main) and the city picker (#s-city) — switched by
+   showCityView; choosing a city closes the picker back to the main
+   view. Built for the TV remote: DPAD arrows move a visible focus ring
+   between the real buttons/inputs (moveSettingsFocus), OK/Enter
+   activates them natively, and Back steps back one level — the city
+   view first, then out to the main screen. The TV shell drives the
+   same paths through window.mpsOpenSettings / window.mpsHandleBack. */
 const panel = $('panel');
-function togglePanel(force) {
-  const show = typeof force === 'boolean' ? force : panel.hidden;
-  panel.hidden = !show;
+let settingsOpen = false;
+let cityViewOpen = false;
+
+function settingsFocusables() {
+  return Array.prototype.slice.call(panel.querySelectorAll('button, input, textarea'))
+    .filter(el => !el.disabled && el.getClientRects().length > 0);
 }
-$('gear').addEventListener('click', () => togglePanel());
-$('clock').addEventListener('click', () => togglePanel());
-$('p-close').addEventListener('click', () => togglePanel(false));
-document.addEventListener('keydown', e => { if (e.key === 'Escape') togglePanel(false); });
+function moveSettingsFocus(dir) {
+  const list = settingsFocusables();
+  if (!list.length) return;
+  const idx = list.indexOf(document.activeElement);
+  const next = dir > 0
+    ? (idx === -1 ? list[0] : list[Math.min(list.length - 1, idx + 1)])
+    : (idx === -1 ? list[list.length - 1] : list[Math.max(0, idx - 1)]);
+  if (next) {
+    next.focus();
+    if (next.scrollIntoView) next.scrollIntoView({ block: 'nearest' });
+  }
+}
+
+function showCityView(show) {
+  cityViewOpen = !!show;
+  $('s-city').hidden = !cityViewOpen;
+  $('s-main').hidden = cityViewOpen;
+  $('s-title').textContent = cityViewOpen ? 'اختيار المدينة' : 'الإعدادات';
+  if (cityViewOpen) {
+    renderCities($('p-search').value);
+    $('p-search').focus();
+  } else if (settingsOpen) {
+    const o = $('p-city-open');
+    if (o) o.focus();
+  }
+}
+function openSettings() {
+  settingsOpen = true;
+  cityViewOpen = false;
+  $('s-city').hidden = true;
+  $('s-main').hidden = false;
+  $('s-title').textContent = 'الإعدادات';
+  updateCityOpenLabel();
+  panel.hidden = false;
+  document.body.classList.add('settings-open');
+  const b = $('p-close');
+  if (b) b.focus();
+}
+function closeSettings() {
+  settingsOpen = false;
+  cityViewOpen = false;
+  panel.hidden = true;
+  document.body.classList.remove('settings-open');
+  const g = $('gear');
+  if (g) g.focus();
+}
+window.mpsOpenSettings = openSettings;
+window.mpsHandleBack = function () {
+  if (!settingsOpen) return false;
+  if (cityViewOpen) { showCityView(false); return true; }
+  closeSettings();
+  return true;
+};
+
+$('gear').addEventListener('click', openSettings);
+$('clock').addEventListener('click', openSettings);
+$('p-close').addEventListener('click', () => {
+  if (cityViewOpen) showCityView(false); else closeSettings();
+});
+$('p-city-open').addEventListener('click', () => showCityView(true));
+
+document.addEventListener('keydown', e => {
+  if (!settingsOpen) return;
+  const k = e.key;
+  const ae = document.activeElement;
+  const tag = ae ? ae.tagName : '';
+  const inText = tag === 'TEXTAREA' || (tag === 'INPUT' && ae.type === 'text');
+  if (k === 'Escape' || k === 'BrowserBack' || k === 'GoBack' || e.keyCode === 461
+      || (k === 'Backspace' && !inText)) {
+    e.preventDefault();
+    window.mpsHandleBack();
+    return;
+  }
+  if (k === 'ArrowDown' || k === 'ArrowUp') {
+    /* inside the multi-line mosque-name field the arrows first walk the
+       caret between its lines; only at the edge line do they move focus */
+    if (tag === 'TEXTAREA') {
+      const v = ae.value, pos = ae.selectionStart || 0;
+      if (k === 'ArrowUp' && v.lastIndexOf('\n', pos - 1) !== -1) return;
+      if (k === 'ArrowDown' && v.indexOf('\n', pos) !== -1) return;
+    }
+    e.preventDefault();
+    moveSettingsFocus(k === 'ArrowDown' ? 1 : -1);
+  } else if ((k === 'ArrowRight' || k === 'ArrowLeft') && !inText) {
+    e.preventDefault();
+    moveSettingsFocus(k === 'ArrowRight' ? 1 : -1);
+  }
+});
 
 const mosqueInput = $('p-mosque');
 mosqueInput.value = mosqueName;
@@ -421,7 +517,15 @@ layoutBtns.forEach(b => b.addEventListener('click', () => {
 }));
 markLayoutBtns();
 
-/* city search + list */
+/* city picker (its own sub-view): the settings main page shows the
+   current city on the opener row; the picker opens from it, and picking
+   a city applies it and CLOSES the picker straight back to the main
+   settings view — no list is ever left hanging over the other settings */
+function updateCityOpenLabel() {
+  const el = $('p-city-name');
+  const c = cityById[cityId];
+  if (el) el.textContent = c ? c.nameAr : '';
+}
 const citiesEl = $('p-cities');
 function renderCities(filter) {
   citiesEl.innerHTML = '';
@@ -429,19 +533,29 @@ function renderCities(filter) {
   CITIES.forEach(c => {
     if (q && !(c.nameAr.includes(q) || (c.nameEn || '').toLowerCase().includes(q.toLowerCase()))) return;
     const b = document.createElement('button');
+    b.type = 'button';
     b.className = 'city-item' + (c.id === cityId ? ' active' : '');
     b.textContent = c.nameAr;
     b.addEventListener('click', () => {
       cityId = c.id;
       store.set('mps_city', cityId);
       lastDateKey = ''; // force re-render
-      renderCities(q);
+      updateCityOpenLabel();
       tick();
+      showCityView(false); // the picker closes on selection
     });
     citiesEl.appendChild(b);
   });
 }
 $('p-search').addEventListener('input', e => renderCities(e.target.value));
+/* Enter in the search box drops the remote focus onto the first result */
+$('p-search').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const first = citiesEl.querySelector('.city-item');
+    if (first) { e.preventDefault(); first.focus(); }
+  }
+});
+updateCityOpenLabel();
 renderCities('');
 
 /* per-prayer iqama + offset steppers */

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>مواقيت الصلاة</title>
-<link rel="stylesheet" href="style.css?v=14">
+<link rel="stylesheet" href="style.css?v=15">
 </head>
 <body data-bg="1" data-pbg="1" data-layout="landscape" data-rot="0">
 <!-- #rotator wraps EVERYTHING visual. Unrotated it is a plain full-viewport
@@ -67,34 +67,55 @@
 
 <button id="gear" title="الإعدادات" aria-label="الإعدادات">⚙</button>
 
-<aside id="panel" hidden>
-  <div class="p-head"><span>الإعدادات</span><button id="p-close" aria-label="إغلاق">✕</button></div>
-
-  <label class="p-label" for="p-mosque">اسم المسجد</label>
-  <textarea id="p-mosque" rows="2" autocomplete="off"></textarea>
-
-  <label class="p-label">اتجاه الشاشة</label>
-  <div class="p-layout-row" id="p-layout">
-    <button type="button" data-lp="auto">تلقائي</button>
-    <button type="button" data-lp="landscape">أفقي</button>
-    <button type="button" data-lp="portrait">عمودي</button>
-    <button type="button" data-lp="portrait-r">عمودي مدوّر يمينًا</button>
-    <button type="button" data-lp="portrait-l">عمودي مدوّر يسارًا</button>
+<!-- Settings: a SEPARATE FULL PAGE (not an overlay) built for remote
+     control — opening it replaces the main screen entirely; «رجوع» — or
+     the remote's Back key, via window.mpsHandleBack — returns. The city
+     picker is its own sub-view (#s-city): it opens from the «المدينة»
+     row in #s-main, and picking a city closes it straight back here. -->
+<section id="panel" hidden aria-label="الإعدادات">
+  <div class="s-head">
+    <button id="p-close" type="button" aria-label="رجوع">‹ رجوع</button>
+    <span class="s-title" id="s-title">الإعدادات</span>
   </div>
 
-  <label class="p-label" for="p-search">المدينة</label>
-  <input id="p-search" type="text" placeholder="ابحث عن مدينة…" autocomplete="off">
-  <div id="p-cities"></div>
+  <div id="s-main" class="s-view">
+    <div class="s-inner">
+      <label class="p-label" for="p-mosque">اسم المسجد</label>
+      <textarea id="p-mosque" rows="2" autocomplete="off"></textarea>
 
-  <div id="p-hijri"></div>
+      <label class="p-label">اتجاه الشاشة</label>
+      <div class="p-layout-row" id="p-layout">
+        <button type="button" data-lp="auto">تلقائي</button>
+        <button type="button" data-lp="landscape">أفقي</button>
+        <button type="button" data-lp="portrait">عمودي</button>
+        <button type="button" data-lp="portrait-r">عمودي مدوّر يمينًا</button>
+        <button type="button" data-lp="portrait-l">عمودي مدوّر يسارًا</button>
+      </div>
 
-  <div id="p-rows"></div>
+      <label class="p-label">المدينة</label>
+      <button id="p-city-open" class="s-city-open" type="button">
+        <span id="p-city-name"></span>
+        <span class="s-city-cta">تغيير المدينة ‹</span>
+      </button>
 
-  <p class="p-hint">تُحفظ الإعدادات تلقائيًا على هذا الجهاز.</p>
-</aside>
+      <div id="p-hijri"></div>
+
+      <div id="p-rows"></div>
+
+      <p class="p-hint">تُحفظ الإعدادات تلقائيًا على هذا الجهاز.</p>
+    </div>
+  </div>
+
+  <div id="s-city" class="s-view" hidden>
+    <div class="s-inner s-city-inner">
+      <input id="p-search" type="text" placeholder="ابحث عن مدينة…" autocomplete="off" aria-label="ابحث عن مدينة">
+      <div id="p-cities"></div>
+    </div>
+  </div>
+</section>
 </div><!-- /#rotator -->
 
 <script src="data.js"></script>
-<script src="app.js?v=14"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>

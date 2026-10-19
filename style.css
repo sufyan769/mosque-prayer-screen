@@ -21,6 +21,16 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* ⚠️ LEGACY TV-BOX WEBVIEWS: never use the `inset` shorthand anywhere in
+   this file. It needs Chromium 87+; cheap TV boxes ship far older
+   WebViews that silently drop the declaration, which collapsed #rotator,
+   #bg and #stage to 0×0 — landscape rendered as bare blue with only the
+   gear (explicit offsets) visible, and rotated portrait shrank to its
+   content size with no background image (user's box, 2026-10-19).
+   Always write top/right/bottom/left out in full. For the same reason
+   every min() font-size carries a plain fallback declaration before it,
+   and flex `gap` has the @supports fallback at the end of this file. */
+
 /* Frame size for the portrait stylesheet: JS (applyLayout) keeps --fw/--fh
    at the layout frame's pixel width/height — the viewport itself when
    unrotated, the swapped dimensions inside the rotated frame. The vw/vh
@@ -35,7 +45,7 @@ body {
    turned ±90°, which exactly refills the landscape viewport while the
    portrait layout inside sees a true portrait box; the transform also
    makes the frame the containing block for the fixed children. */
-#rotator { position: fixed; inset: 0; }
+#rotator { position: fixed; top: 0; right: 0; bottom: 0; left: 0; }
 body[data-rot="90"] #rotator,
 body[data-rot="-90"] #rotator {
   left: 50%; top: 50%; right: auto; bottom: auto;
@@ -45,7 +55,7 @@ body[data-rot="90"] #rotator { transform: translate(-50%, -50%) rotate(90deg); }
 body[data-rot="-90"] #rotator { transform: translate(-50%, -50%) rotate(-90deg); }
 
 #bg {
-  position: fixed; inset: 0; z-index: 0;
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 0;
   background: center center / cover no-repeat;
   background-image: url('bg.jpg');
 }
@@ -135,7 +145,7 @@ body[data-layout="landscape"][data-bg="5"] .prow.next .ptime,
 body[data-layout="landscape"][data-bg="7"] .prow.next .ptime,
 body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
 
-#stage { position: fixed; inset: 0; z-index: 2; }
+#stage { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 2; }
 
 /* ---------- Left zone: prayer rows ---------- */
 #prayers {
@@ -153,13 +163,13 @@ body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
 .prow[data-key="fajr"] { cursor: pointer; }
 .pname {
   color: #0A2C5D;
-  font-size: min(8.6vh, 12.5vw);
+  font-size: 8.6vh; font-size: min(8.6vh, 12.5vw);
   font-weight: 700;
   line-height: 1.15;
 }
 .ptime {
   color: #CC4844;
-  font-size: min(9.4vh, 14vw);
+  font-size: 9.4vh; font-size: min(9.4vh, 14vw);
   line-height: 1.1;
   direction: ltr;
 }
@@ -184,17 +194,17 @@ body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
 .tcol { text-align: center; }
 .tline1 {
   display: flex; justify-content: center; gap: 1.6vw;
-  font-size: min(4.3vh, 6.5vw); line-height: 1.25;
+  font-size: 4.3vh; font-size: min(4.3vh, 6.5vw); line-height: 1.25;
 }
-.tdate { font-size: min(5.7vh, 8.5vw); line-height: 1.2; }
+.tdate { font-size: 5.7vh; font-size: min(5.7vh, 8.5vw); line-height: 1.2; }
 .tcol-hijri { display: flex; align-items: center; justify-content: center; }
-.thijri { font-size: min(5.7vh, 8.5vw); line-height: 1.2; white-space: nowrap; }
+.thijri { font-size: 5.7vh; font-size: min(5.7vh, 8.5vw); line-height: 1.2; white-space: nowrap; }
 
 /* mosque name — headline of the right zone, above the clock */
 #mosquename {
   text-align: right;
   padding-right: 1vw;
-  font-size: min(10.2vh, 15vw);
+  font-size: 10.2vh; font-size: min(10.2vh, 15vw);
   font-weight: 700;
   line-height: 1.3;
   margin-top: 2.6vh;
@@ -208,7 +218,7 @@ body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
   padding-bottom: 2.5vh; padding-right: 1vw;
 }
 #clock {
-  font-size: min(12.5vh, 18.5vw);
+  font-size: 12.5vh; font-size: min(12.5vh, 18.5vw);
   line-height: 1.1;
   direction: ltr;
   cursor: pointer;
@@ -217,8 +227,8 @@ body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
 /* bottom cluster: next adhan (right) | iqama | sunrise (left) */
 #bottomcluster { display: flex; align-items: flex-start; }
 .bcol { text-align: center; }
-.blabel { font-size: min(3.9vh, 6vw); line-height: 1.3; }
-.bval { font-size: min(7.8vh, 11.5vw); line-height: 1.15; direction: ltr; }
+.blabel { font-size: 3.9vh; font-size: min(3.9vh, 6vw); line-height: 1.3; }
+.bval { font-size: 7.8vh; font-size: min(7.8vh, 11.5vw); line-height: 1.15; direction: ltr; }
 
 /* ---------- Iqama-window silent-phone warning ---------- */
 /* The veil darkens ONLY the background picture: it stacks under #stage
@@ -226,14 +236,14 @@ body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
    stay fully lit and readable above it. The warning panel itself rides
    above the stage, centered, and never intercepts clicks. */
 #iqamaveil {
-  position: fixed; inset: 0; z-index: 1;
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 1;
   background: rgba(3, 10, 26, .55);
 }
 #iqamaveil[hidden] { display: none; }
 #iqama-alert {
   position: fixed; left: 50%; top: 48.5%; z-index: 30;
   transform: translate(-50%, -50%);
-  width: min(86vw, 150vh);
+  width: 86vw; width: min(86vw, 150vh);
   display: flex; align-items: center; justify-content: center; gap: 2.5vw;
   text-align: center;
   background: rgba(4, 14, 34, .88);
@@ -245,11 +255,11 @@ body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
 }
 #iqama-alert[hidden] { display: none; }
 #iqama-alert .ia-icon {
-  font-size: min(12vh, 17vw); line-height: 1.15;
+  font-size: 12vh; font-size: min(12vh, 17vw); line-height: 1.15;
 }
 #iqama-alert .ia-text {
   color: #FFD166;
-  font-size: min(7.8vh, 11.5vw);
+  font-size: 7.8vh; font-size: min(7.8vh, 11.5vw);
   font-weight: 700; line-height: 1.35;
 }
 /* while the warning is up, the iqama cell itself burns bright red */
@@ -265,7 +275,7 @@ body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
   z-index: 60; pointer-events: none;
   background: rgba(6, 29, 64, .85); color: #fff;
   padding: 1.1vh 2.2vw; border-radius: 999px;
-  font-size: min(3.4vh, 5vw); line-height: 1.3;
+  font-size: 3.4vh; font-size: min(3.4vh, 5vw); line-height: 1.3;
   opacity: 0; transition: opacity .25s ease;
 }
 #toast.show { opacity: 1; }
@@ -280,90 +290,131 @@ body[data-layout="landscape"][data-bg="8"] .prow.next .ptime { color: #fff; }
   opacity: .38;
 }
 #gear:hover, #gear:focus-visible { opacity: 1; }
+#gear:focus { outline: 3px solid #FFD166; outline-offset: 2px; opacity: 1; }
 
+/* Settings are a SEPARATE FULL PAGE, not an overlay: the section covers
+   the whole frame (it lives inside #rotator, so it follows the rotated
+   modes too) and the main screen is visibility-hidden beneath it via
+   body.settings-open. Built for the TV remote: every control is a real
+   button/input at least ~56px tall, arrow keys move a clearly visible
+   gold focus ring (see app.js focus navigation), OK activates. */
 #panel {
-  position: fixed; top: 0; bottom: 0; right: 0; z-index: 50;
-  width: min(430px, 94vw);
+  position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 50;
   background: #061D40;
   color: #fff;
-  padding: 18px 18px 26px;
-  overflow-y: auto;
-  box-shadow: 0 0 40px rgba(0, 0, 0, .45);
-  font-size: 17px;
+  display: flex; flex-direction: column;
+  font-size: 21px;
 }
 #panel[hidden] { display: none; }
-.p-head {
-  display: flex; justify-content: space-between; align-items: center;
-  font-size: 22px; font-weight: 700; margin-bottom: 10px;
+body.settings-open #stage,
+body.settings-open #bg,
+body.settings-open #gear,
+body.settings-open #toast { visibility: hidden; }
+
+.s-head {
+  display: flex; align-items: center; gap: 20px;
+  padding: 18px 28px;
+  border-bottom: 2px solid rgba(255, 255, 255, .18);
 }
 #p-close {
-  background: none; border: none; color: #fff;
-  font-size: 20px; cursor: pointer; padding: 4px 8px;
+  min-height: 60px; padding: 8px 30px;
+  border-radius: 10px; border: 2px solid rgba(255, 255, 255, .5);
+  background: rgba(255, 255, 255, .12); color: #fff;
+  font-family: inherit; font-size: 23px; font-weight: 700; cursor: pointer;
 }
-.p-label { display: block; margin: 14px 0 6px; font-weight: 700; }
+.s-title { font-size: 30px; font-weight: 700; }
+
+.s-view { flex: 1; overflow-y: auto; padding: 8px 28px 34px; }
+.s-view[hidden] { display: none; }
+.s-inner { max-width: 1020px; margin: 0 auto; }
+
+.p-label { display: block; margin: 22px 0 8px; font-weight: 700; font-size: 23px; }
 #panel input[type="text"] {
-  width: 100%; padding: 9px 11px;
-  border-radius: 8px; border: 1px solid rgba(255, 255, 255, .35);
+  width: 100%; padding: 14px 14px; min-height: 60px;
+  border-radius: 10px; border: 1px solid rgba(255, 255, 255, .35);
   background: rgba(255, 255, 255, .1); color: #fff;
-  font-family: inherit; font-size: 17px;
+  font-family: inherit; font-size: 22px;
 }
 #panel input[type="text"]::placeholder { color: rgba(255, 255, 255, .55); }
 #panel textarea {
-  width: 100%; padding: 9px 11px;
-  border-radius: 8px; border: 1px solid rgba(255, 255, 255, .35);
+  width: 100%; padding: 14px 14px;
+  border-radius: 10px; border: 1px solid rgba(255, 255, 255, .35);
   background: rgba(255, 255, 255, .1); color: #fff;
-  font-family: inherit; font-size: 17px; line-height: 1.45;
+  font-family: inherit; font-size: 22px; line-height: 1.45;
   resize: vertical;
 }
-#p-hijri {
-  margin-top: 16px; padding-top: 12px;
-  border-top: 1px solid rgba(255, 255, 255, .15);
+
+/* city picker opener — shows the current city; opens the city sub-view */
+.s-city-open {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; min-height: 68px; padding: 10px 18px;
+  border-radius: 10px; border: 1px solid rgba(255, 255, 255, .35);
+  background: rgba(255, 255, 255, .1); color: #fff;
+  font-family: inherit; font-size: 23px; cursor: pointer;
 }
+.s-city-open .s-city-cta { color: #FFD166; font-size: 20px; font-weight: 700; }
+
+/* city sub-view: search stays on top, the list fills the rest and
+   scrolls; choosing a city closes the sub-view back to settings main */
+.s-city-inner { display: flex; flex-direction: column; height: 100%; }
 #p-cities {
-  margin-top: 8px; max-height: 240px; overflow-y: auto;
-  border: 1px solid rgba(255, 255, 255, .22); border-radius: 8px;
+  flex: 1; overflow-y: auto; min-height: 0;
+  margin-top: 12px;
+  border: 1px solid rgba(255, 255, 255, .22); border-radius: 10px;
 }
 .city-item {
   display: block; width: 100%; text-align: start;
-  padding: 8px 12px; background: none; border: none;
+  min-height: 62px; padding: 14px 16px; background: none; border: none;
   border-bottom: 1px solid rgba(255, 255, 255, .08);
-  color: #fff; font-family: inherit; font-size: 17px; cursor: pointer;
+  color: #fff; font-family: inherit; font-size: 22px; cursor: pointer;
 }
 .city-item:last-child { border-bottom: none; }
 .city-item:hover { background: rgba(255, 255, 255, .12); }
 .city-item.active { background: rgba(204, 72, 68, .55); font-weight: 700; }
 
-.p-prow {
-  margin-top: 16px; padding-top: 12px;
+#p-hijri {
+  margin-top: 22px; padding-top: 16px;
   border-top: 1px solid rgba(255, 255, 255, .15);
 }
-.p-pname { font-weight: 700; font-size: 19px; margin-bottom: 8px; }
+.p-prow {
+  margin-top: 20px; padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, .15);
+}
+.p-pname { font-weight: 700; font-size: 25px; margin-bottom: 10px; }
 .p-step-line {
   display: flex; align-items: center; justify-content: space-between;
-  margin-top: 6px;
+  margin-top: 10px; font-size: 22px;
 }
-.step { display: flex; align-items: center; gap: 10px; direction: ltr; }
+.step { display: flex; align-items: center; gap: 12px; direction: ltr; }
 .step button {
-  width: 36px; height: 36px; border-radius: 50%;
+  width: 58px; height: 58px; border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, .4);
   background: rgba(255, 255, 255, .12); color: #fff;
-  font-size: 20px; cursor: pointer; line-height: 1;
+  font-size: 28px; cursor: pointer; line-height: 1;
 }
-.step .val { min-width: 44px; text-align: center; font-size: 19px; }
-.step .unit { direction: rtl; color: rgba(255, 255, 255, .75); font-size: 14px; min-width: 34px; }
-.p-hint { margin-top: 20px; color: rgba(255, 255, 255, .6); font-size: 14px; }
+.step .val { min-width: 58px; text-align: center; font-size: 25px; }
+.step .unit { direction: rtl; color: rgba(255, 255, 255, .75); font-size: 17px; min-width: 40px; }
+.p-hint { margin-top: 26px; color: rgba(255, 255, 255, .6); font-size: 17px; }
 
-/* screen-orientation segmented control in the settings panel — five
-   options now (auto / landscape / portrait / مدوّر يمينًا / مدوّر يسارًا),
-   so the row wraps instead of crushing the Arabic labels */
-.p-layout-row { display: flex; flex-wrap: wrap; gap: 8px; }
+/* screen-orientation segmented control — five options (auto / landscape
+   / portrait / مدوّر يمينًا / مدوّر يسارًا), wrapping instead of crushing
+   the Arabic labels */
+.p-layout-row { display: flex; flex-wrap: wrap; gap: 10px; }
 .p-layout-row button {
-  flex: 1 1 30%; padding: 9px 0; border-radius: 8px;
+  flex: 1 1 30%; min-height: 62px; padding: 10px 0; border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, .35);
   background: rgba(255, 255, 255, .1); color: #fff;
-  font-family: inherit; font-size: 16px; cursor: pointer;
+  font-family: inherit; font-size: 20px; cursor: pointer;
 }
 .p-layout-row button.active { background: rgba(204, 72, 68, .55); font-weight: 700; }
+
+/* remote focus: a thick gold ring + brighter fill on whatever control
+   the DPAD focus sits on — readable from across the room */
+#panel button:focus, #panel input:focus, #panel textarea:focus {
+  outline: 4px solid #FFD166; outline-offset: 2px;
+  background-color: rgba(255, 209, 102, .22);
+}
+#panel .city-item.active:focus { background-color: rgba(204, 72, 68, .75); }
 
 /* next-prayer name line — only the portrait bottom strip shows it */
 .bname { display: none; }
@@ -406,7 +457,7 @@ body[data-layout="portrait"] #mosquename {
   padding-right: 0;
   margin-top: 0;
   color: #fff;
-  font-size: min(calc(var(--fh) * .056), calc(var(--fw) * .105));
+  font-size: calc(var(--fh) * .056); font-size: min(calc(var(--fh) * .056), calc(var(--fw) * .105));
   text-shadow: 0 2px 16px rgba(0, 0, 0, .4);
 }
 
@@ -419,7 +470,7 @@ body[data-layout="portrait"] #clockwrap {
 }
 body[data-layout="portrait"] #clock {
   color: #fff;
-  font-size: min(calc(var(--fh) * .088), calc(var(--fw) * .16));
+  font-size: calc(var(--fh) * .088); font-size: min(calc(var(--fh) * .088), calc(var(--fw) * .16));
   text-shadow: 0 2px 16px rgba(0, 0, 0, .4);
 }
 
@@ -437,7 +488,7 @@ body[data-layout="portrait"] .tcol {
 body[data-layout="portrait"] .tline1,
 body[data-layout="portrait"] .tdate,
 body[data-layout="portrait"] .thijri {
-  font-size: min(calc(var(--fh) * .031), calc(var(--fw) * .055));
+  font-size: calc(var(--fh) * .031); font-size: min(calc(var(--fh) * .031), calc(var(--fw) * .055));
   line-height: 1.25;
   white-space: nowrap;
 }
@@ -448,7 +499,7 @@ body[data-layout="portrait"] #topcluster .vdiv {
 }
 body[data-layout="portrait"] #topcluster .vdiv::after {
   content: '•';
-  font-size: min(calc(var(--fh) * .031), calc(var(--fw) * .055)); line-height: 1;
+  font-size: calc(var(--fh) * .031); font-size: min(calc(var(--fh) * .031), calc(var(--fw) * .055)); line-height: 1;
 }
 
 /* 4 — the five prayer rows inside the arch: name RIGHT, time LEFT (RTL) */
@@ -463,13 +514,13 @@ body[data-layout="portrait"] #prayers {
 body[data-layout="portrait"] .prow { padding: 0 calc(var(--fw) * .012); }
 body[data-layout="portrait"] .pname {
   color: #fff;
-  font-size: min(calc(var(--fh) * .056), calc(var(--fw) * .102));
+  font-size: calc(var(--fh) * .056); font-size: min(calc(var(--fh) * .056), calc(var(--fw) * .102));
   -webkit-text-stroke: 0;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .45);
 }
 body[data-layout="portrait"] .ptime {
   color: #FFC95E;
-  font-size: min(calc(var(--fh) * .062), calc(var(--fw) * .112));
+  font-size: calc(var(--fh) * .062); font-size: min(calc(var(--fh) * .062), calc(var(--fw) * .112));
   -webkit-text-stroke: 0;
   text-shadow: 0 2px 14px rgba(0, 0, 0, .45);
 }
@@ -494,12 +545,12 @@ body[data-layout="portrait"] #iqama-col + .vdiv { display: none; }
 body[data-layout="portrait"] #bottomcluster .vdiv {
   align-self: center; height: calc(var(--fh) * .075); margin: 0;
 }
-body[data-layout="portrait"] #bottomcluster .blabel { font-size: min(calc(var(--fh) * .027), calc(var(--fw) * .05)); }
-body[data-layout="portrait"] #bottomcluster .bval { font-size: min(calc(var(--fh) * .058), calc(var(--fw) * .104)); }
+body[data-layout="portrait"] #bottomcluster .blabel { font-size: calc(var(--fh) * .027); font-size: min(calc(var(--fh) * .027), calc(var(--fw) * .05)); }
+body[data-layout="portrait"] #bottomcluster .bval { font-size: calc(var(--fh) * .058); font-size: min(calc(var(--fh) * .058), calc(var(--fw) * .104)); }
 /* the «باقي للفجر» line carries the next prayer's name inside the label
    itself, so it and its countdown get the strip's biggest type */
-body[data-layout="portrait"] #next-col .blabel { font-size: min(calc(var(--fh) * .036), calc(var(--fw) * .066)); }
-body[data-layout="portrait"] #next-col .bval { font-size: min(calc(var(--fh) * .064), calc(var(--fw) * .114)); }
+body[data-layout="portrait"] #next-col .blabel { font-size: calc(var(--fh) * .036); font-size: min(calc(var(--fh) * .036), calc(var(--fw) * .066)); }
+body[data-layout="portrait"] #next-col .bval { font-size: calc(var(--fh) * .064); font-size: min(calc(var(--fh) * .064), calc(var(--fw) * .114)); }
 /* the separate next-prayer name line is retired in portrait — the name
    now lives inside the «باقي لل…» label */
 body[data-layout="portrait"] .bname { display: none; }
@@ -526,7 +577,7 @@ body[data-layout="portrait"] #next-col.alert .bval {
    tall narrow column beside the icon. */
 body[data-layout="portrait"] #iqama-alert {
   top: 56%;
-  width: min(calc(var(--fw) * .88), calc(var(--fh) * .62));
+  width: calc(var(--fw) * .88); width: min(calc(var(--fw) * .88), calc(var(--fh) * .62));
   flex-direction: column;
   gap: calc(var(--fh) * .015);
   /* the base rule's padding/radius are also viewport-unit sized — restated
@@ -535,13 +586,26 @@ body[data-layout="portrait"] #iqama-alert {
   padding: calc(var(--fh) * .028) calc(var(--fw) * .03);
   border-radius: calc(var(--fh) * .032);
 }
-body[data-layout="portrait"] #iqama-alert .ia-icon { font-size: min(calc(var(--fh) * .09), calc(var(--fw) * .14)); }
-body[data-layout="portrait"] #iqama-alert .ia-text { font-size: min(calc(var(--fh) * .068), calc(var(--fw) * .105)); }
+body[data-layout="portrait"] #iqama-alert .ia-icon { font-size: calc(var(--fh) * .09); font-size: min(calc(var(--fh) * .09), calc(var(--fw) * .14)); }
+body[data-layout="portrait"] #iqama-alert .ia-text { font-size: calc(var(--fh) * .068); font-size: min(calc(var(--fh) * .068), calc(var(--fw) * .105)); }
 
 /* the toast shares the base rule's viewport units — frame-unit restatement
    for portrait, identical on a native portrait screen */
 body[data-layout="portrait"] #toast {
   bottom: calc(var(--fh) * .06);
   padding: calc(var(--fh) * .011) calc(var(--fw) * .022);
-  font-size: min(calc(var(--fh) * .034), calc(var(--fw) * .05));
+  font-size: calc(var(--fh) * .034); font-size: min(calc(var(--fh) * .034), calc(var(--fw) * .05));
+}
+
+/* flex `gap` needs Chromium 84+ — on older TV-box WebViews the gaps
+   collapse entirely; these margin fallbacks restore the spacing there
+   and never apply where gap works. */
+@supports not (gap: 1px) {
+  .step > * + * { margin-left: 12px; }
+  .p-layout-row > * { margin: 5px; }
+  #iqama-alert .ia-text { margin-right: 2.5vw; }
+  body[data-layout="portrait"] #iqama-alert .ia-text {
+    margin-right: 0; margin-top: calc(var(--fh) * .015);
+  }
+  body[data-layout="portrait"] .tcol > * + * { margin-right: .45em; }
 }
